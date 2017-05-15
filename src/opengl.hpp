@@ -79,6 +79,11 @@ private:
 	GLuint m_pbrProgram;
 
 	Texture m_envTexture;
+
+	Texture m_albedoTexture;
+	Texture m_normalTexture;
+	Texture m_metalnessTexture;
+	Texture m_roughnessTexture;
 };
 
 } // OpenGL

@@ -9,17 +9,18 @@ layout(location=3) in vec3 bitangent;
 layout(location=4) in vec2 texcoord;
 
 layout(location=0) uniform mat4 viewProjMatrix;
-layout(location=1) uniform mat4 viewMatrix;
 
 out Vertex
 {
-	vec3 normal;
+	vec3 position;
 	vec2 texcoord;
+	mat3 tangentBasis;
 } vout;
 
 void main()
 {
-	vout.texcoord = texcoord;
-	vout.normal   = vec3(viewMatrix * vec4(normal, 0.0));
-	gl_Position   = viewProjMatrix * vec4(position, 1.0);
+	vout.position = position.xyz;
+	vout.texcoord = vec2(texcoord.x, 1.0-texcoord.y);
+	vout.tangentBasis = mat3(tangent, bitangent, normal);
+	gl_Position = viewProjMatrix * vec4(position, 1.0);
 }

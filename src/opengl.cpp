@@ -20,7 +20,7 @@ namespace OpenGL {
 enum UniformLocations : GLuint
 {
 	ViewProjectionMatrix = 0,
-	ViewMatrix = 1,
+	EyePosition = 1,
 };
 
 GLFWwindow* Renderer::initialize(int width, int height, int samples)
@@ -109,6 +109,11 @@ void Renderer::setup()
 	});
 
 	m_envTexture = createTexture(Image::fromFile("environment.hdr", 3), GL_RGB, GL_RGB16F, 1);
+
+	m_albedoTexture = createTexture(Image::fromFile("textures/cerberus_A.png", 3), GL_RGB, GL_SRGB8);
+	m_normalTexture = createTexture(Image::fromFile("textures/cerberus_N.png", 3), GL_RGB, GL_RGB8);
+	m_metalnessTexture = createTexture(Image::fromFile("textures/cerberus_M.png", 1), GL_RED, GL_R8);
+	m_roughnessTexture = createTexture(Image::fromFile("textures/cerberus_R.png", 1), GL_RED, GL_R8);
 }
 
 void Renderer::render(GLFWwindow* window, const ViewSettings& view)
@@ -116,10 +121,14 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view)
 	const glm::mat4 projMatrix     = glm::perspectiveFov(view.fov, float(m_framebuffer.width), float(m_framebuffer.height), 1.0f, 1000.0f);
 	const glm::mat4 rotationMatrix = glm::eulerAngleXY(glm::radians(view.pitch), glm::radians(view.yaw));
 	const glm::mat4 viewMatrix     = glm::translate(glm::mat4(), {0.0f, 0.0f, -view.distance}) * rotationMatrix;
+	const glm::vec3 eyePosition    = glm::inverse(viewMatrix)[3];
 
+	// Set skybox program uniforms.
 	glProgramUniformMatrix4fv(m_skyboxProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix * rotationMatrix));
+
+	// Set PBR program uniforms.
 	glProgramUniformMatrix4fv(m_pbrProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix * viewMatrix));
-	glProgramUniformMatrix4fv(m_pbrProgram, ViewMatrix, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	glProgramUniform3fv(m_pbrProgram, EyePosition, 1, glm::value_ptr(eyePosition));
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer.id);
 	glClear(GL_DEPTH_BUFFER_BIT); // No need to clear color, since we'll overwrite the screen with our skybox.
@@ -134,7 +143,10 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view)
 	// Draw model.
 	glEnable(GL_DEPTH_TEST);
 	glUseProgram(m_pbrProgram);
-	glBindTextureUnit(0, 0);
+	glBindTextureUnit(0, m_albedoTexture.id);
+	glBindTextureUnit(1, m_normalTexture.id);
+	glBindTextureUnit(2, m_metalnessTexture.id);
+	glBindTextureUnit(3, m_roughnessTexture.id);
 	glBindVertexArray(m_pbrModel.vao);
 	glDrawElements(GL_TRIANGLES, m_pbrModel.numElements, GL_UNSIGNED_INT, 0);
 		
