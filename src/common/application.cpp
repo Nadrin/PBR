@@ -44,6 +44,7 @@ Application::~Application()
 
 void Application::run(const std::unique_ptr<RendererInterface>& renderer)
 {
+	glfwWindowHint(GLFW_RESIZABLE, 0);
 	m_window = renderer->initialize(DisplaySizeX, DisplaySizeY, DisplaySamples);
 
 	glfwSetWindowUserPointer(m_window, this);

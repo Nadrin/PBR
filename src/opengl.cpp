@@ -25,8 +25,6 @@ enum UniformLocations : GLuint
 
 GLFWwindow* Renderer::initialize(int width, int height, int samples)
 {
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
