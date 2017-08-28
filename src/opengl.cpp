@@ -67,6 +67,11 @@ GLFWwindow* Renderer::initialize(int width, int height, int samples)
 
 void Renderer::shutdown()
 {
+	if(m_framebuffer.id != m_resolveFramebuffer.id) {
+		deleteFrameBuffer(m_resolveFramebuffer);
+	}
+	deleteFrameBuffer(m_framebuffer);
+
 	deleteVertexBuffer(m_screenQuad);
 	deleteVertexBuffer(m_skybox);
 	deleteVertexBuffer(m_pbrModel);
@@ -76,18 +81,22 @@ void Renderer::shutdown()
 	glDeleteProgram(m_pbrProgram);
 
 	deleteTexture(m_envTexture);
+	deleteTexture(m_irmapTexture);
 
-	if(m_framebuffer.id != m_resolveFramebuffer.id) {
-		deleteFrameBuffer(m_resolveFramebuffer);
-	}
-	deleteFrameBuffer(m_framebuffer);
+	deleteTexture(m_albedoTexture);
+	deleteTexture(m_normalTexture);
+	deleteTexture(m_metalnessTexture);
+	deleteTexture(m_roughnessTexture);
 }
 
 void Renderer::setup()
 {
+	// Set OpenGL state.
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glFrontFace(GL_CCW);
 
+	// Load assets & compile/link rendering programs.
 	m_screenQuad = createClipSpaceQuad();
 	m_tonemapProgram = linkProgram({
 		compileShader("shaders/glsl/passthrough_vs.glsl", GL_VERTEX_SHADER),
@@ -106,12 +115,47 @@ void Renderer::setup()
 		compileShader("shaders/glsl/pbr_fs.glsl", GL_FRAGMENT_SHADER)
 	});
 
-	m_envTexture = createTexture(Image::fromFile("environment.hdr", 3), GL_RGB, GL_RGB16F, 1);
-
 	m_albedoTexture = createTexture(Image::fromFile("textures/cerberus_A.png", 3), GL_RGB, GL_SRGB8);
 	m_normalTexture = createTexture(Image::fromFile("textures/cerberus_N.png", 3), GL_RGB, GL_RGB8);
 	m_metalnessTexture = createTexture(Image::fromFile("textures/cerberus_M.png", 1), GL_RED, GL_R8);
 	m_roughnessTexture = createTexture(Image::fromFile("textures/cerberus_R.png", 1), GL_RED, GL_R8);
+	
+	// Convert equirectangular environment map to a cubemap texture.
+	{
+		GLuint equirectToCubeProgram = linkProgram({
+			compileShader("shaders/glsl/equirect2cube_cs.glsl", GL_COMPUTE_SHADER)
+		});
+
+		Texture envTextureEquirect = createTexture(Image::fromFile("environment.hdr", 3), GL_RGB, GL_RGB16F, 1);
+		m_envTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+
+		glUseProgram(equirectToCubeProgram);
+		glBindTextureUnit(0, envTextureEquirect.id);
+		glBindImageTexture(0, m_envTexture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glDispatchCompute(m_envTexture.width/32, m_envTexture.height/32, 6);
+		
+		glDeleteTextures(1, &envTextureEquirect.id);
+		glDeleteProgram(equirectToCubeProgram);
+		
+		generateTextureMipmaps(m_envTexture);
+	}
+
+	// Pre compute irradiance cubemap.
+	{
+		GLuint irmapProgram = linkProgram({
+			compileShader("shaders/glsl/irmap_cs.glsl", GL_COMPUTE_SHADER)
+		});
+
+		m_irmapTexture = createTexture(GL_TEXTURE_CUBE_MAP, 32, 32, GL_RGBA16F, 1);
+
+		glUseProgram(irmapProgram);
+		glBindTextureUnit(0, m_envTexture.id);
+		glBindImageTexture(0, m_irmapTexture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glDispatchCompute(m_irmapTexture.width/32, m_irmapTexture.height/32, 6);
+		glFinish();
+
+		glDeleteProgram(irmapProgram);
+	}
 }
 
 void Renderer::render(GLFWwindow* window, const ViewSettings& view)
@@ -145,6 +189,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view)
 	glBindTextureUnit(1, m_normalTexture.id);
 	glBindTextureUnit(2, m_metalnessTexture.id);
 	glBindTextureUnit(3, m_roughnessTexture.id);
+	glBindTextureUnit(4, m_irmapTexture.id);
 	glBindVertexArray(m_pbrModel.vao);
 	glDrawElements(GL_TRIANGLES, m_pbrModel.numElements, GL_UNSIGNED_INT, 0);
 		
@@ -216,7 +261,7 @@ GLuint Renderer::linkProgram(std::initializer_list<GLuint> shaders)
 	return program;
 }
 	
-Texture Renderer::createTexture(int width, int height, GLenum internalformat, int levels)
+Texture Renderer::createTexture(GLenum target, int width, int height, GLenum internalformat, int levels)
 {
 	Texture texture;
 	texture.width  = width;
@@ -230,7 +275,7 @@ Texture Renderer::createTexture(int width, int height, GLenum internalformat, in
 		}
 	}
 	
-	glCreateTextures(GL_TEXTURE_2D, 1, &texture.id);
+	glCreateTextures(target, 1, &texture.id);
 	glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
 	glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -239,7 +284,7 @@ Texture Renderer::createTexture(int width, int height, GLenum internalformat, in
 	
 Texture Renderer::createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels)
 {
-	Texture texture = createTexture(image->width(), image->height(), internalformat, levels);
+	Texture texture = createTexture(GL_TEXTURE_2D, image->width(), image->height(), internalformat, levels);
 	if(image->isHDR()) {
 		glTextureSubImage2D(texture.id, 0, 0, 0, texture.width, texture.height, format, GL_FLOAT, image->pixels<float>());
 	}

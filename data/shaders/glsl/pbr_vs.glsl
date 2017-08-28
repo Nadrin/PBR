@@ -2,6 +2,8 @@
 // Physically Based Rendering
 // Copyright (c) 2017 Michał Siejak
 
+// Physically Based shading model: Vertex program.
+
 layout(location=0) in vec3 position;
 layout(location=1) in vec3 normal;
 layout(location=2) in vec3 tangent;
@@ -21,6 +23,9 @@ void main()
 {
 	vout.position = position.xyz;
 	vout.texcoord = vec2(texcoord.x, 1.0-texcoord.y);
+
+	// Pass tangent space basis vectors (for normal mapping).
 	vout.tangentBasis = mat3(tangent, bitangent, normal);
+
 	gl_Position = viewProjMatrix * vec4(position, 1.0);
 }

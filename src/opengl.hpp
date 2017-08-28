@@ -49,7 +49,7 @@ private:
 	static GLuint compileShader(const std::string& filename, GLenum type);
 	static GLuint linkProgram(std::initializer_list<GLuint> shaders);
 
-	static Texture createTexture(int width, int height, GLenum internalformat, int levels=0);
+	static Texture createTexture(GLenum target, int width, int height, GLenum internalformat, int levels=0);
 	static Texture createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels=0);
 	static void generateTextureMipmaps(const Texture& texture);
 	static void deleteTexture(Texture& texture);
@@ -79,6 +79,7 @@ private:
 	GLuint m_pbrProgram;
 
 	Texture m_envTexture;
+	Texture m_irmapTexture;
 
 	Texture m_albedoTexture;
 	Texture m_normalTexture;

@@ -2,6 +2,8 @@
 // Physically Based Rendering
 // Copyright (c) 2017 Michał Siejak
 
+// Tone-mapping & gamma correction.
+
 const float gamma     = 2.2;
 const float exposure  = 1.0;
 const float pureWhite = 1.0;
