@@ -2,18 +2,21 @@
 // Physically Based Rendering
 // Copyright (c) 2017 Micha³ Siejak
 
-// Computes diffuse irradiance cubemap convolution for image-based lighting.
-// Uses quasi Monte Carlo sampling with Hammersley sequence.
+// Pre-filters environment cube map using GGX NDF importance sampling.
+// Part of specular IBL split-sum approximation.
 
 const float PI = 3.141592;
 const float TwoPI = 2 * PI;
 const float Epsilon = 0.00001;
 
-const uint NumSamples = 64 * 1024;
+const uint NumSamples = 4 * 1024;
 const float InvNumSamples = 1.0 / float(NumSamples);
 
 layout(binding=0) uniform samplerCube inputTexture;
 layout(binding=0, rgba16f) restrict writeonly uniform imageCube outputTexture;
+
+// Roughness value to pre-filter for.
+layout(location=0) uniform float roughness;
 
 // Compute Van der Corput radical inverse
 // See: http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
@@ -33,14 +36,19 @@ vec2 sampleHammersley(uint i)
 	return vec2(i * InvNumSamples, radicalInverse_VdC(i));
 }
 
-// Uniformly sample point on a hemisphere.
-// Cosine-weighted sampling would be a better fit for Lambertian BRDF but since this
-// compute shader runs only once as a pre-processing step performance is not *that* important.
-// See: "Physically Based Rendering" 2nd ed., section 13.6.1.
-vec3 sampleHemisphere(float u1, float u2)
+// Importance sample GGX normal distribution function for a fixed roughness value.
+// This returns normalized half-vector between Li & Lo.
+// For derivation see: http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
+vec3 sampleGGX(float u1, float u2, float roughness)
 {
-	const float u1p = sqrt(max(0.0, 1.0 - u1*u1));
-	return vec3(cos(TwoPI*u2) * u1p, sin(TwoPI*u2) * u1p, u1);
+	float alpha = roughness * roughness;
+
+	float cosTheta = sqrt((1.0 - u2) / (1.0 + (alpha*alpha - 1.0) * u2));
+	float sinTheta = sqrt(1.0 - cosTheta*cosTheta); // Trig. identity
+	float phi = TwoPI * u1;
+
+	// Convert to Cartesian upon return.
+	return vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 }
 
 // Calculate normalized sampling direction vector based on current fragment coordinates (gl_GlobalInvocationID.xyz).
@@ -83,23 +91,38 @@ vec3 tangentToWorld(const vec3 v, const vec3 N, const vec3 S, const vec3 T)
 layout(local_size_x=32, local_size_y=32, local_size_z=1) in;
 void main(void)
 {
+	// Make sure we won't write past output when computing higher mipmap levels.
+	ivec2 outputSize = imageSize(outputTexture);
+	if(gl_GlobalInvocationID.x >= outputSize.x || gl_GlobalInvocationID.y >= outputSize.y) {
+		return;
+	}
+
 	vec3 N = getSamplingVector();
+	// Approximation: Assume zero viewing angle (isotropic reflections).
+	vec3 Lo = N;
 	
 	vec3 S, T;
 	computeBasisVectors(N, S, T);
 
-	// Monte Carlo integration of hemispherical irradiance.
-	// As a small optimization this also includes Lambertian BRDF assuming perfectly white surface (albedo of 1.0)
-	// so we don't need to normalize in PBR fragment shader (so technically it makes it outgoing radiance I think).
-	vec3 irradiance = vec3(0);
+	vec3 color = vec3(0);
+	float samplesWeight = 0;
+
+	// Convolve environment map using GGX NDF importance sampling.
+	// Weight by cosine term since Epic claims it generally improves quality.
 	for(uint i=0; i<NumSamples; ++i) {
-		vec2 u  = sampleHammersley(i);
-		vec3 Li = tangentToWorld(sampleHemisphere(u.x, u.y), N, S, T);
-		float cosTheta = max(0.0, dot(Li, N));
+		vec2 u = sampleHammersley(i);
+		vec3 Lh = tangentToWorld(sampleGGX(u.x, u.y, roughness), N, S, T);
 
-		irradiance += 2.0 * texture(inputTexture, Li).rgb * cosTheta;
+		// Compute incident direction (Li) by reflecting viewing direction (Lo) around half-vector (Lh).
+		vec3 Li = 2.0 * dot(Lo, Lh) * Lh - Lo;
+
+		float cosLi = dot(N, Li);
+		if(cosLi > 0.0) {
+			color += texture(inputTexture, Li).rgb * cosLi;
+			samplesWeight += cosLi;
+		}
 	}
-	irradiance /= vec3(NumSamples);
+	color /= samplesWeight;
 
-	imageStore(outputTexture, ivec3(gl_GlobalInvocationID), vec4(irradiance, 1.0));
+	imageStore(outputTexture, ivec3(gl_GlobalInvocationID), vec4(color, 1.0));
 }

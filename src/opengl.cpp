@@ -21,6 +21,7 @@ enum UniformLocations : GLuint
 {
 	ViewProjectionMatrix = 0,
 	EyePosition = 1,
+	SpecularMapRoughness = 0,
 };
 
 GLFWwindow* Renderer::initialize(int width, int height, int samples)
@@ -82,6 +83,8 @@ void Renderer::shutdown()
 
 	deleteTexture(m_envTexture);
 	deleteTexture(m_irmapTexture);
+	deleteTexture(m_spmapTexture);
+	deleteTexture(m_spBRDF_LUT);
 
 	deleteTexture(m_albedoTexture);
 	deleteTexture(m_normalTexture);
@@ -136,11 +139,11 @@ void Renderer::setup()
 		
 		glDeleteTextures(1, &envTextureEquirect.id);
 		glDeleteProgram(equirectToCubeProgram);
-		
-		generateTextureMipmaps(m_envTexture);
+
+		glGenerateTextureMipmap(m_envTexture.id);
 	}
 
-	// Pre compute irradiance cubemap.
+	// Compute irradiance cubemap.
 	{
 		GLuint irmapProgram = linkProgram({
 			compileShader("shaders/glsl/irmap_cs.glsl", GL_COMPUTE_SHADER)
@@ -152,10 +155,44 @@ void Renderer::setup()
 		glBindTextureUnit(0, m_envTexture.id);
 		glBindImageTexture(0, m_irmapTexture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 		glDispatchCompute(m_irmapTexture.width/32, m_irmapTexture.height/32, 6);
-		glFinish();
-
 		glDeleteProgram(irmapProgram);
 	}
+
+	// Compute pre-filtered specular cubemap
+	{
+		GLuint spmapProgram = linkProgram({
+			compileShader("shaders/glsl/spmap_cs.glsl", GL_COMPUTE_SHADER)
+		});
+
+		m_spmapTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+		const float deltaRoughness = 1.0f / glm::max(float(m_spmapTexture.levels-1), 1.0f);
+
+		glUseProgram(spmapProgram);
+		glBindTextureUnit(0, m_envTexture.id);
+		for(int level=0, size=1024; level<=m_spmapTexture.levels; ++level, size/=2) {
+			const GLuint numGroups = glm::max(1, size/32);
+			glBindImageTexture(0, m_spmapTexture.id, level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+			glProgramUniform1f(spmapProgram, SpecularMapRoughness, level * deltaRoughness);
+			glDispatchCompute(numGroups, numGroups, 6);
+		}
+		glDeleteProgram(spmapProgram);
+	}
+
+	// Compute Cook-Torrance BRDF 2D LUT for split-sum approximation
+	{
+		GLuint spBRDFProgram = linkProgram({
+			compileShader("shaders/glsl/spbrdf_cs.glsl", GL_COMPUTE_SHADER)
+		});
+
+		m_spBRDF_LUT = createTexture(GL_TEXTURE_2D, 256, 256, GL_RG16F, 1);
+
+		glUseProgram(spBRDFProgram);
+		glBindImageTexture(0, m_spBRDF_LUT.id, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+		glDispatchCompute(m_spBRDF_LUT.width/32, m_spBRDF_LUT.height/32, 1);
+		glDeleteProgram(spBRDFProgram);
+	}
+
+	glFinish();
 }
 
 void Renderer::render(GLFWwindow* window, const ViewSettings& view)
@@ -190,6 +227,8 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view)
 	glBindTextureUnit(2, m_metalnessTexture.id);
 	glBindTextureUnit(3, m_roughnessTexture.id);
 	glBindTextureUnit(4, m_irmapTexture.id);
+	glBindTextureUnit(5, m_spmapTexture.id);
+	glBindTextureUnit(6, m_spBRDF_LUT.id);
 	glBindVertexArray(m_pbrModel.vao);
 	glDrawElements(GL_TRIANGLES, m_pbrModel.numElements, GL_UNSIGNED_INT, 0);
 		
@@ -277,7 +316,7 @@ Texture Renderer::createTexture(GLenum target, int width, int height, GLenum int
 	
 	glCreateTextures(target, 1, &texture.id);
 	glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
-	glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, texture.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	return texture;
 }
@@ -293,7 +332,7 @@ Texture Renderer::createTexture(const std::shared_ptr<class Image>& image, GLenu
 	}
 
 	if(texture.levels > 1) {
-		generateTextureMipmaps(texture);
+		glGenerateTextureMipmap(texture.id);
 	}
 	return texture;
 }
@@ -304,12 +343,6 @@ void Renderer::deleteTexture(Texture& texture)
 	std::memset(&texture, 0, sizeof(Texture));
 }
 
-void Renderer::generateTextureMipmaps(const Texture& texture)
-{
-	glGenerateTextureMipmap(texture.id);
-	glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-}
-	
 FrameBuffer Renderer::createFrameBuffer(int width, int height, int samples, GLenum colorFormat, GLenum depthstencilFormat)
 {
 	FrameBuffer fb;

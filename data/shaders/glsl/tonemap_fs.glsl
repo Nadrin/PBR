@@ -15,7 +15,7 @@ layout(binding=0) uniform sampler2D sceneColor;
 
 void main()
 {
-	vec3 color = texture2D(sceneColor, screenPosition).rgb * exposure;
+	vec3 color = texture(sceneColor, screenPosition).rgb * exposure;
 
 	// Reinhard tonemapping operator.
 	// see: "Photographic Tone Reproduction for Digital Images", eq. 4
