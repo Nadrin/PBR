@@ -49,6 +49,8 @@ GLFWwindow* Renderer::initialize(int width, int height, int samples)
 	if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		throw std::runtime_error("Failed to initialize OpenGL extensions loader");
 	}
+	
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &m_capabilities.maxAnisotropy);
 
 #if _DEBUG
 	glDebugMessageCallback(Renderer::logMessage, nullptr);
@@ -300,7 +302,7 @@ GLuint Renderer::linkProgram(std::initializer_list<GLuint> shaders)
 	return program;
 }
 	
-Texture Renderer::createTexture(GLenum target, int width, int height, GLenum internalformat, int levels)
+Texture Renderer::createTexture(GLenum target, int width, int height, GLenum internalformat, int levels) const
 {
 	Texture texture;
 	texture.width  = width;
@@ -318,10 +320,11 @@ Texture Renderer::createTexture(GLenum target, int width, int height, GLenum int
 	glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);
 	glTextureParameteri(texture.id, GL_TEXTURE_MIN_FILTER, texture.levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTextureParameteri(texture.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameterf(texture.id, GL_TEXTURE_MAX_ANISOTROPY_EXT, m_capabilities.maxAnisotropy);
 	return texture;
 }
 	
-Texture Renderer::createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels)
+Texture Renderer::createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels) const
 {
 	Texture texture = createTexture(GL_TEXTURE_2D, image->width(), image->height(), internalformat, levels);
 	if(image->isHDR()) {

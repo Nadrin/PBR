@@ -49,8 +49,8 @@ private:
 	static GLuint compileShader(const std::string& filename, GLenum type);
 	static GLuint linkProgram(std::initializer_list<GLuint> shaders);
 
-	static Texture createTexture(GLenum target, int width, int height, GLenum internalformat, int levels=0);
-	static Texture createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels=0);
+	Texture createTexture(GLenum target, int width, int height, GLenum internalformat, int levels=0) const;
+	Texture createTexture(const std::shared_ptr<class Image>& image, GLenum format, GLenum internalformat, int levels=0) const;
 	static void deleteTexture(Texture& texture);
 
 	static FrameBuffer createFrameBuffer(int width, int height, int samples, GLenum colorFormat, GLenum depthstencilFormat);
@@ -65,6 +65,10 @@ private:
 #if _DEBUG
 	static void logMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 #endif
+
+	struct {
+		float maxAnisotropy = 1.0f;
+	} m_capabilities;
 
 	FrameBuffer m_framebuffer;
 	FrameBuffer m_resolveFramebuffer;
