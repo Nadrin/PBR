@@ -2,7 +2,7 @@
 // Physically Based Rendering
 // Copyright (c) 2017 Michał Siejak
 
-// Physically Based shading model: Lambetrtian diffuse BRDF + Cook-Torrace microfacet specular BRDF + IBL for ambient.
+// Physically Based shading model: Lambetrtian diffuse BRDF + Cook-Torrance microfacet specular BRDF + IBL for ambient.
 
 // This implementation is based on "Real Shading in Unreal Engine 4" SIGGRAPH 2013 course notes by Epic Games.
 // See: http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf

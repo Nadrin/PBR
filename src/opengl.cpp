@@ -85,7 +85,6 @@ void Renderer::shutdown()
 
 	deleteTexture(m_envTexture);
 	deleteTexture(m_irmapTexture);
-	deleteTexture(m_spmapTexture);
 	deleteTexture(m_spBRDF_LUT);
 
 	deleteTexture(m_albedoTexture);
@@ -96,7 +95,7 @@ void Renderer::shutdown()
 
 void Renderer::setup()
 {
-	// Set OpenGL state.
+	// Set global OpenGL state.
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glFrontFace(GL_CCW);
@@ -125,27 +124,58 @@ void Renderer::setup()
 	m_metalnessTexture = createTexture(Image::fromFile("textures/cerberus_M.png", 1), GL_RED, GL_R8);
 	m_roughnessTexture = createTexture(Image::fromFile("textures/cerberus_R.png", 1), GL_RED, GL_R8);
 	
-	// Convert equirectangular environment map to a cubemap texture.
+	// Unfiltered environment cube map (temporary).
+	Texture envTextureUnfiltered = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+	
+	// Load & convert equirectangular environment map to a cubemap texture.
 	{
 		GLuint equirectToCubeProgram = linkProgram({
 			compileShader("shaders/glsl/equirect2cube_cs.glsl", GL_COMPUTE_SHADER)
 		});
 
 		Texture envTextureEquirect = createTexture(Image::fromFile("environment.hdr", 3), GL_RGB, GL_RGB16F, 1);
-		m_envTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
 
 		glUseProgram(equirectToCubeProgram);
 		glBindTextureUnit(0, envTextureEquirect.id);
-		glBindImageTexture(0, m_envTexture.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-		glDispatchCompute(m_envTexture.width/32, m_envTexture.height/32, 6);
+		glBindImageTexture(0, envTextureUnfiltered.id, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+		glDispatchCompute(envTextureUnfiltered.width/32, envTextureUnfiltered.height/32, 6);
 		
 		glDeleteTextures(1, &envTextureEquirect.id);
 		glDeleteProgram(equirectToCubeProgram);
+	}
+	
+	glGenerateTextureMipmap(envTextureUnfiltered.id);
+	
+	// Compute pre-filtered specular environment map.
+	{
+		GLuint spmapProgram = linkProgram({
+			compileShader("shaders/glsl/spmap_cs.glsl", GL_COMPUTE_SHADER)
+		});
 
-		glGenerateTextureMipmap(m_envTexture.id);
+		m_envTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+
+		// Copy 0th mipmap level into destination environment map.
+		glCopyImageSubData(envTextureUnfiltered.id, GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+			m_envTexture.id, GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+			m_envTexture.width, m_envTexture.height, 6);
+
+		glUseProgram(spmapProgram);
+		glBindTextureUnit(0, envTextureUnfiltered.id);
+
+		// Pre-filter rest of the mip chain.
+		const float deltaRoughness = 1.0f / glm::max(float(m_envTexture.levels-1), 1.0f);
+		for(int level=1, size=512; level<=m_envTexture.levels; ++level, size/=2) {
+			const GLuint numGroups = glm::max(1, size/32);
+			glBindImageTexture(0, m_envTexture.id, level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+			glProgramUniform1f(spmapProgram, SpecularMapRoughness, level * deltaRoughness);
+			glDispatchCompute(numGroups, numGroups, 6);
+		}
+		glDeleteProgram(spmapProgram);
 	}
 
-	// Compute irradiance cubemap.
+	glDeleteTextures(1, &envTextureUnfiltered.id);
+
+	// Compute diffuse irradiance cubemap.
 	{
 		GLuint irmapProgram = linkProgram({
 			compileShader("shaders/glsl/irmap_cs.glsl", GL_COMPUTE_SHADER)
@@ -160,27 +190,7 @@ void Renderer::setup()
 		glDeleteProgram(irmapProgram);
 	}
 
-	// Compute pre-filtered specular cubemap
-	{
-		GLuint spmapProgram = linkProgram({
-			compileShader("shaders/glsl/spmap_cs.glsl", GL_COMPUTE_SHADER)
-		});
-
-		m_spmapTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
-		const float deltaRoughness = 1.0f / glm::max(float(m_spmapTexture.levels-1), 1.0f);
-
-		glUseProgram(spmapProgram);
-		glBindTextureUnit(0, m_envTexture.id);
-		for(int level=0, size=1024; level<=m_spmapTexture.levels; ++level, size/=2) {
-			const GLuint numGroups = glm::max(1, size/32);
-			glBindImageTexture(0, m_spmapTexture.id, level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-			glProgramUniform1f(spmapProgram, SpecularMapRoughness, level * deltaRoughness);
-			glDispatchCompute(numGroups, numGroups, 6);
-		}
-		glDeleteProgram(spmapProgram);
-	}
-
-	// Compute Cook-Torrance BRDF 2D LUT for split-sum approximation
+	// Compute Cook-Torrance BRDF 2D LUT for split-sum approximation.
 	{
 		GLuint spBRDFProgram = linkProgram({
 			compileShader("shaders/glsl/spbrdf_cs.glsl", GL_COMPUTE_SHADER)
@@ -229,7 +239,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view)
 	glBindTextureUnit(2, m_metalnessTexture.id);
 	glBindTextureUnit(3, m_roughnessTexture.id);
 	glBindTextureUnit(4, m_irmapTexture.id);
-	glBindTextureUnit(5, m_spmapTexture.id);
+	glBindTextureUnit(5, m_envTexture.id);
 	glBindTextureUnit(6, m_spBRDF_LUT.id);
 	glBindVertexArray(m_pbrModel.vao);
 	glDrawElements(GL_TRIANGLES, m_pbrModel.numElements, GL_UNSIGNED_INT, 0);

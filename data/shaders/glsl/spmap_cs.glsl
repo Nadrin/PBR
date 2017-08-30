@@ -9,7 +9,7 @@ const float PI = 3.141592;
 const float TwoPI = 2 * PI;
 const float Epsilon = 0.00001;
 
-const uint NumSamples = 4 * 1024;
+const uint NumSamples = 1024;
 const float InvNumSamples = 1.0 / float(NumSamples);
 
 layout(binding=0) uniform samplerCube inputTexture;
@@ -49,6 +49,17 @@ vec3 sampleGGX(float u1, float u2, float roughness)
 
 	// Convert to Cartesian upon return.
 	return vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+}
+
+// GGX/Towbridge-Reitz normal distribution function.
+// Uses Disney's reparametrization of alpha = roughness^2.
+float ndfGGX(float cosLh, float roughness)
+{
+	float alpha   = roughness * roughness;
+	float alphaSq = alpha * alpha;
+
+	float denom = (cosLh * cosLh) * (alphaSq - 1.0) + 1.0;
+	return alphaSq / (PI * denom * denom);
 }
 
 // Calculate normalized sampling direction vector based on current fragment coordinates (gl_GlobalInvocationID.xyz).
@@ -96,16 +107,21 @@ void main(void)
 	if(gl_GlobalInvocationID.x >= outputSize.x || gl_GlobalInvocationID.y >= outputSize.y) {
 		return;
 	}
-
-	vec3 N = getSamplingVector();
+	
+	// Solid angle associated with a single cubemap texel at zero mipmap level.
+	// This will come in handy for importance sampling below.
+	vec2 inputSize = vec2(textureSize(inputTexture, 0));
+	float wt = 4.0 * PI / (6 * inputSize.x * inputSize.y);
+	
 	// Approximation: Assume zero viewing angle (isotropic reflections).
+	vec3 N = getSamplingVector();
 	vec3 Lo = N;
 	
 	vec3 S, T;
 	computeBasisVectors(N, S, T);
 
 	vec3 color = vec3(0);
-	float samplesWeight = 0;
+	float weight = 0;
 
 	// Convolve environment map using GGX NDF importance sampling.
 	// Weight by cosine term since Epic claims it generally improves quality.
@@ -118,11 +134,26 @@ void main(void)
 
 		float cosLi = dot(N, Li);
 		if(cosLi > 0.0) {
-			color += texture(inputTexture, Li).rgb * cosLi;
-			samplesWeight += cosLi;
+			// Use Mipmap Filtered Importance Sampling to improve convergence.
+			// See: https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch20.html, section 20.4
+
+			float cosLh = max(dot(N, Lh), 0.0);
+
+			// GGX normal distribution function (D term) probability density function.
+			// Scaling by 1/4 is due to change of density in terms of Lh to Li (and since N=V, rest of the scaling factor cancels out).
+			float pdf = ndfGGX(cosLh, roughness) * 0.25;
+
+			// Solid angle associated with this sample.
+			float ws = 1.0 / (NumSamples * pdf);
+
+			// Mip level to sample from.
+			float mipLevel = max(0.5 * log2(ws / wt) + 1.0, 0.0);
+
+			color  += textureLod(inputTexture, Li, mipLevel).rgb * cosLi;
+			weight += cosLi;
 		}
 	}
-	color /= samplesWeight;
+	color /= weight;
 
 	imageStore(outputTexture, ivec3(gl_GlobalInvocationID), vec4(color, 1.0));
 }

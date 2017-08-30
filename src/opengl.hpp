@@ -83,7 +83,6 @@ private:
 
 	Texture m_envTexture;
 	Texture m_irmapTexture;
-	Texture m_spmapTexture;
 	Texture m_spBRDF_LUT;
 
 	Texture m_albedoTexture;

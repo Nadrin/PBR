@@ -97,7 +97,7 @@ void main(void)
 		vec3 Li = tangentToWorld(sampleHemisphere(u.x, u.y), N, S, T);
 		float cosTheta = max(0.0, dot(Li, N));
 
-		irradiance += 2.0 * texture(inputTexture, Li).rgb * cosTheta;
+		irradiance += 2.0 * textureLod(inputTexture, Li, 0).rgb * cosTheta;
 	}
 	irradiance /= vec3(NumSamples);
 

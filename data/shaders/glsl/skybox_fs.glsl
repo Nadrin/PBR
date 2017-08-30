@@ -12,5 +12,5 @@ layout(binding=0) uniform samplerCube envTexture;
 void main()
 {
 	vec3 envVector = normalize(localPosition);
-	color = texture(envTexture, envVector);
+	color = textureLod(envTexture, envVector, 0);
 }
