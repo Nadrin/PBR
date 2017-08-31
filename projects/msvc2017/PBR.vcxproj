@@ -28,6 +28,22 @@
     <ClInclude Include="..\..\src\common\utils.hpp" />
     <ClInclude Include="..\..\src\opengl.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\glsl\equirect2cube_cs.glsl" />
+    <None Include="..\..\data\shaders\glsl\irmap_cs.glsl" />
+    <None Include="..\..\data\shaders\glsl\passthrough_vs.glsl" />
+    <None Include="..\..\data\shaders\glsl\pbr_fs.glsl" />
+    <None Include="..\..\data\shaders\glsl\pbr_vs.glsl" />
+    <None Include="..\..\data\shaders\glsl\skybox_fs.glsl" />
+    <None Include="..\..\data\shaders\glsl\skybox_vs.glsl" />
+    <None Include="..\..\data\shaders\glsl\spbrdf_cs.glsl" />
+    <None Include="..\..\data\shaders\glsl\spmap_cs.glsl" />
+    <None Include="..\..\data\shaders\glsl\tonemap_fs.glsl" />
+    <None Include="..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\COPYING.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{7F6DC88B-FFAA-4C17-BAAC-DFEA91BAA2D3}</ProjectGuid>

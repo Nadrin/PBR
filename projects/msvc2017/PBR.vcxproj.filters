@@ -10,6 +10,12 @@
     <Filter Include="src\lib">
       <UniqueIdentifier>{df0f1f33-1fda-40c0-9c3a-ced8e92affb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{10443a30-f2e6-41b3-babd-4bcd61464cad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\glsl">
+      <UniqueIdentifier>{758360b6-204a-487f-b2c8-d295ce61a883}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\opengl.cpp">
@@ -56,5 +62,41 @@
     <ClInclude Include="..\..\src\common\application.hpp">
       <Filter>src\common</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\glsl\passthrough_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\pbr_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\pbr_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\skybox_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\skybox_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\tonemap_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\irmap_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\equirect2cube_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\spmap_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\glsl\spbrdf_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </None>
+    <None Include="..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\COPYING.txt" />
   </ItemGroup>
 </Project>
