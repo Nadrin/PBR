@@ -10,10 +10,16 @@ struct GLFWwindow;
 
 struct ViewSettings
 {
-	float pitch;
-	float yaw;
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 	float distance;
 	float fov;
+};
+
+struct SceneSettings
+{
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 };
 
 class RendererInterface
@@ -24,5 +30,5 @@ public:
 	virtual GLFWwindow* initialize(int width, int height, int samples) = 0;
 	virtual void shutdown() = 0;
 	virtual void setup() = 0;
-	virtual void render(GLFWwindow* window, const ViewSettings& view) = 0;
+	virtual void render(GLFWwindow* window, const ViewSettings& view, const SceneSettings& scene) = 0;
 };

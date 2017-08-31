@@ -20,7 +20,9 @@ namespace OpenGL {
 enum UniformLocations : GLuint
 {
 	ViewProjectionMatrix = 0,
-	EyePosition = 1,
+	SceneRotationMatrix = 1,
+	EyePosition = 2,
+
 	SpecularMapRoughness = 0,
 };
 
@@ -207,18 +209,20 @@ void Renderer::setup()
 	glFinish();
 }
 
-void Renderer::render(GLFWwindow* window, const ViewSettings& view)
+void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneSettings& scene)
 {
-	const glm::mat4 projMatrix     = glm::perspectiveFov(view.fov, float(m_framebuffer.width), float(m_framebuffer.height), 1.0f, 1000.0f);
-	const glm::mat4 rotationMatrix = glm::eulerAngleXY(glm::radians(view.pitch), glm::radians(view.yaw));
-	const glm::mat4 viewMatrix     = glm::translate(glm::mat4(), {0.0f, 0.0f, -view.distance}) * rotationMatrix;
-	const glm::vec3 eyePosition    = glm::inverse(viewMatrix)[3];
+	const glm::mat4 projectionMatrix = glm::perspectiveFov(view.fov, float(m_framebuffer.width), float(m_framebuffer.height), 1.0f, 1000.0f);
+	const glm::mat4 viewRotationMatrix = glm::eulerAngleXY(glm::radians(view.pitch), glm::radians(view.yaw));
+	const glm::mat4 sceneRotationMatrix = glm::eulerAngleXY(glm::radians(scene.pitch), glm::radians(scene.yaw));
+	const glm::mat4 viewMatrix = glm::translate(glm::mat4(), {0.0f, 0.0f, -view.distance}) * viewRotationMatrix;
+	const glm::vec3 eyePosition = glm::inverse(viewMatrix)[3];
 
 	// Set skybox program uniforms.
-	glProgramUniformMatrix4fv(m_skyboxProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix * rotationMatrix));
+	glProgramUniformMatrix4fv(m_skyboxProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix * viewRotationMatrix));
 
 	// Set PBR program uniforms.
-	glProgramUniformMatrix4fv(m_pbrProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projMatrix * viewMatrix));
+	glProgramUniformMatrix4fv(m_pbrProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix * viewMatrix));
+	glProgramUniformMatrix4fv(m_pbrProgram, SceneRotationMatrix, 1, GL_FALSE, glm::value_ptr(sceneRotationMatrix));
 	glProgramUniform3fv(m_pbrProgram, EyePosition, 1, glm::value_ptr(eyePosition));
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer.id);

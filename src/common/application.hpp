@@ -26,4 +26,13 @@ private:
 	double m_prevCursorY;
 
 	ViewSettings m_viewSettings;
+	SceneSettings m_sceneSettings;
+
+	enum class InputMode
+	{
+		None,
+		RotatingView,
+		RotatingScene,
+	};
+	InputMode m_mode;
 };

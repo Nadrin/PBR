@@ -13,23 +13,22 @@ namespace {
 	const int DisplaySizeY = 1024;
 	const int DisplaySamples = 16;
 
-	const float ViewDistance   = 150.0f;
-	const float ViewFOV        = 45.0f;
-	const float ViewOrbitSpeed = 1.0f;
-	const float ViewZoomSpeed  = 4.0f;
+	const float ViewDistance = 150.0f;
+	const float ViewFOV      = 45.0f;
+	const float OrbitSpeed   = 1.0f;
+	const float ZoomSpeed    = 4.0f;
 }
 
 Application::Application()
 	: m_window(nullptr)
 	, m_prevCursorX(0.0)
 	, m_prevCursorY(0.0)
+	, m_mode(InputMode::None)
 {
 	if(!glfwInit()) {
 		throw std::runtime_error("Failed to initialize GLFW library");
 	}
 
-	m_viewSettings.yaw   = 0.0f;
-	m_viewSettings.pitch = 0.0f;
 	m_viewSettings.distance = ViewDistance;
 	m_viewSettings.fov      = ViewFOV;
 }
@@ -54,7 +53,7 @@ void Application::run(const std::unique_ptr<RendererInterface>& renderer)
 
 	renderer->setup();
 	while(!glfwWindowShouldClose(m_window)) {
-		renderer->render(m_window, m_viewSettings);
+		renderer->render(m_window, m_viewSettings, m_sceneSettings);
 		glfwPollEvents();
 	}
 
@@ -64,12 +63,20 @@ void Application::run(const std::unique_ptr<RendererInterface>& renderer)
 void Application::mousePositionCallback(GLFWwindow* window, double xpos, double ypos)
 {
 	Application* self = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-	if(glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+	if(self->m_mode != InputMode::None) {
 		const double dx = xpos - self->m_prevCursorX;
 		const double dy = ypos - self->m_prevCursorY;
 
-		self->m_viewSettings.yaw   += ViewOrbitSpeed * float(dx);
-		self->m_viewSettings.pitch += ViewOrbitSpeed * float(dy);
+		switch(self->m_mode) {
+		case InputMode::RotatingScene:
+			self->m_sceneSettings.yaw   += OrbitSpeed * float(dx);
+			self->m_sceneSettings.pitch += OrbitSpeed * float(dy);
+			break;
+		case InputMode::RotatingView:
+			self->m_viewSettings.yaw   += OrbitSpeed * float(dx);
+			self->m_viewSettings.pitch += OrbitSpeed * float(dy);
+			break;
+		}
 
 		self->m_prevCursorX = xpos;
 		self->m_prevCursorY = ypos;
@@ -80,17 +87,34 @@ void Application::mouseButtonCallback(GLFWwindow* window, int button, int action
 {
 	Application* self = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 
-	if(action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		glfwGetCursorPos(window, &self->m_prevCursorX, &self->m_prevCursorY);
+	const InputMode oldMode = self->m_mode;
+	if(action == GLFW_PRESS && self->m_mode == InputMode::None) {
+		switch(button) {
+		case GLFW_MOUSE_BUTTON_1:
+			self->m_mode = InputMode::RotatingView;
+			break;
+		case GLFW_MOUSE_BUTTON_2:
+			self->m_mode = InputMode::RotatingScene;
+			break;
+		}
 	}
-	if(action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_1) {
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	if(action == GLFW_RELEASE && (button == GLFW_MOUSE_BUTTON_1 || button == GLFW_MOUSE_BUTTON_2)) {
+		self->m_mode = InputMode::None;
+	}
+
+	if(oldMode != self->m_mode) {
+		if(self->m_mode == InputMode::None) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwGetCursorPos(window, &self->m_prevCursorX, &self->m_prevCursorY);
+		}
 	}
 }
 	
 void Application::mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	Application* self = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
-	self->m_viewSettings.distance += ViewZoomSpeed * float(-yoffset);
+	self->m_viewSettings.distance += ZoomSpeed * float(-yoffset);
 }

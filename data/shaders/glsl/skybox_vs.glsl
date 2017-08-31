@@ -5,12 +5,12 @@
 // Environment skybox: Vertex program.
 
 layout(location=0) in vec3 position;
-layout(location=0) uniform mat4 viewProjMatrix;
+layout(location=0) uniform mat4 viewProjectionMatrix;
 
 out vec3 localPosition;
 
 void main()
 {
 	localPosition = position.xyz;
-	gl_Position   = viewProjMatrix * vec4(position, 1.0);
+	gl_Position   = viewProjectionMatrix * vec4(position, 1.0);
 }

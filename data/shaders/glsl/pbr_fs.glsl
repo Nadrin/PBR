@@ -25,7 +25,7 @@ in Vertex {
 
 out vec4 color;
 
-layout(location=1) uniform vec3 eyePosition;
+layout(location=2) uniform vec3 eyePosition;
 
 layout(binding=0) uniform sampler2D albedoTexture;
 layout(binding=1) uniform sampler2D normalTexture;

@@ -43,7 +43,7 @@ public:
 	GLFWwindow* initialize(int width, int height, int samples) override;
 	void shutdown() override;
 	void setup() override;
-	void render(GLFWwindow* window, const ViewSettings& view) override;
+	void render(GLFWwindow* window, const ViewSettings& view, const SceneSettings& scene) override;
 
 private:
 	static GLuint compileShader(const std::string& filename, GLenum type);

@@ -10,7 +10,8 @@ layout(location=2) in vec3 tangent;
 layout(location=3) in vec3 bitangent;
 layout(location=4) in vec2 texcoord;
 
-layout(location=0) uniform mat4 viewProjMatrix;
+layout(location=0) uniform mat4 viewProjectionMatrix;
+layout(location=1) uniform mat4 sceneRotationMatrix;
 
 out Vertex
 {
@@ -21,11 +22,11 @@ out Vertex
 
 void main()
 {
-	vout.position = position.xyz;
+	vout.position = vec3(sceneRotationMatrix * vec4(position, 1.0));
 	vout.texcoord = vec2(texcoord.x, 1.0-texcoord.y);
 
 	// Pass tangent space basis vectors (for normal mapping).
-	vout.tangentBasis = mat3(tangent, bitangent, normal);
+	vout.tangentBasis = mat3(sceneRotationMatrix) * mat3(tangent, bitangent, normal);
 
-	gl_Position = viewProjMatrix * vec4(position, 1.0);
+	gl_Position = viewProjectionMatrix * sceneRotationMatrix * vec4(position, 1.0);
 }
