@@ -31,6 +31,16 @@ Application::Application()
 
 	m_viewSettings.distance = ViewDistance;
 	m_viewSettings.fov      = ViewFOV;
+
+	m_sceneSettings.lights[0].direction = glm::normalize(glm::vec3{-1.0f,  0.0f, 0.0f});
+	m_sceneSettings.lights[1].direction = glm::normalize(glm::vec3{ 1.0f,  0.0f, 0.0f});
+	m_sceneSettings.lights[2].direction = glm::normalize(glm::vec3{ 0.0f, -1.0f, 0.0f});
+
+	m_sceneSettings.lights[0].radiance = glm::vec3{1.0f};
+	m_sceneSettings.lights[1].radiance = glm::vec3{1.0f};
+	m_sceneSettings.lights[2].radiance = glm::vec3{1.0f};
+
+	m_sceneSettings.lights[0].enabled = true;
 }
 
 Application::~Application()
@@ -50,6 +60,7 @@ void Application::run(const std::unique_ptr<RendererInterface>& renderer)
 	glfwSetCursorPosCallback(m_window, Application::mousePositionCallback);
 	glfwSetMouseButtonCallback(m_window, Application::mouseButtonCallback);
 	glfwSetScrollCallback(m_window, Application::mouseScrollCallback);
+	glfwSetKeyCallback(m_window, Application::keyCallback);
 
 	renderer->setup();
 	while(!glfwWindowShouldClose(m_window)) {
@@ -117,4 +128,29 @@ void Application::mouseScrollCallback(GLFWwindow* window, double xoffset, double
 {
 	Application* self = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 	self->m_viewSettings.distance += ZoomSpeed * float(-yoffset);
+}
+	
+void Application::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	Application* self = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+
+	if(action == GLFW_PRESS) {
+		SceneSettings::Light* light = nullptr;
+		
+		switch(key) {
+		case GLFW_KEY_F1:
+			light = &self->m_sceneSettings.lights[0];
+			break;
+		case GLFW_KEY_F2:
+			light = &self->m_sceneSettings.lights[1];
+			break;
+		case GLFW_KEY_F3:
+			light = &self->m_sceneSettings.lights[2];
+			break;
+		}
+
+		if(light) {
+			light->enabled = !light->enabled;
+		}
+	}
 }

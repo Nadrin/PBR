@@ -20,6 +20,7 @@ private:
 	static void mousePositionCallback(GLFWwindow* window, double xpos, double ypos);
 	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	static void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 	GLFWwindow* m_window;
 	double m_prevCursorX;

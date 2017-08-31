@@ -22,6 +22,7 @@ enum UniformLocations : GLuint
 	ViewProjectionMatrix = 0,
 	SceneRotationMatrix = 1,
 	EyePosition = 2,
+	Lights = 10,
 
 	SpecularMapRoughness = 0,
 };
@@ -67,6 +68,7 @@ GLFWwindow* Renderer::initialize(int width, int height, int samples)
 		m_resolveFramebuffer = m_framebuffer;
 	}
 
+	std::printf("OpenGL %s [%s %s]\n", glGetString(GL_VERSION), glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 	return window;
 }
 
@@ -225,6 +227,21 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	glProgramUniformMatrix4fv(m_pbrProgram, SceneRotationMatrix, 1, GL_FALSE, glm::value_ptr(sceneRotationMatrix));
 	glProgramUniform3fv(m_pbrProgram, EyePosition, 1, glm::value_ptr(eyePosition));
 
+	// Analytic lights uniforms.
+	for(int i=0; i<SceneSettings::NumLights; ++i) {
+		const SceneSettings::Light& light = scene.lights[i];
+		const GLuint location = Lights + 2*i;
+
+		glProgramUniform3fv(m_pbrProgram, location, 1, glm::value_ptr(light.direction));
+		if(light.enabled) {
+			glProgramUniform3fv(m_pbrProgram, location+1, 1, glm::value_ptr(light.radiance));
+		}
+		else {
+			glProgramUniform3f(m_pbrProgram, location+1, 0.0f, 0.0f, 0.0f);
+		}
+	}
+
+	// Prepare framebuffer for rendering.
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer.id);
 	glClear(GL_DEPTH_BUFFER_BIT); // No need to clear color, since we'll overwrite the screen with our skybox.
 

@@ -10,12 +10,15 @@
 const float PI = 3.141592;
 const float Epsilon = 0.00001;
 
-// Light parameters.
-const vec3 Li = vec3(1.0, 0.0, 0.0);
-const vec3 Lradiance = vec3(2.0);
+const int NumLights = 3;
 
 // Constant normal incidence Fresnel factor for all dielectrics.
 const vec3 Fdielectric = vec3(0.04);
+
+struct Light {
+	vec3 direction;
+	vec3 radiance;
+};
 
 in Vertex {
 	vec3 position;
@@ -26,6 +29,7 @@ in Vertex {
 out vec4 color;
 
 layout(location=2) uniform vec3 eyePosition;
+layout(location=10) uniform Light lights[NumLights];
 
 layout(binding=0) uniform sampler2D albedoTexture;
 layout(binding=1) uniform sampler2D normalTexture;
@@ -89,9 +93,13 @@ void main()
 	// Fresnel reflectance at normal incidence (for metals use albedo color).
 	vec3 F0 = mix(Fdielectric, albedo, metalness);
 
-	// Direct lighting calculation
-	vec3 directLighting;
+	// Direct lighting calculation for analytical lights.
+	vec3 directLighting = vec3(0);
+	for(int i=0; i<NumLights; ++i)
 	{
+		vec3 Li = -lights[i].direction;
+		vec3 Lradiance = lights[i].radiance;
+
 		// Half-vector between Li and Lo.
 		vec3 Lh = normalize(Li + Lo);
 
@@ -117,8 +125,8 @@ void main()
 		// Cook-Torrance specular microfacet BRDF.
 		vec3 specularBRDF = (F * D * G) / max(Epsilon, 4.0 * cosLi * cosLo);
 
-		// Total direct lighting contribution.
-		directLighting = (diffuseBRDF + specularBRDF) * Lradiance * cosLi;
+		// Total contribution for this light.
+		directLighting += (diffuseBRDF + specularBRDF) * Lradiance * cosLi;
 	}
 
 	// Ambient lighting (IBL).

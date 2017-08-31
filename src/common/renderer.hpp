@@ -20,6 +20,13 @@ struct SceneSettings
 {
 	float pitch = 0.0f;
 	float yaw = 0.0f;
+
+	static const int NumLights = 3;
+	struct Light {
+		glm::vec3 direction;
+		glm::vec3 radiance;
+		bool enabled = false;
+	} lights[NumLights];
 };
 
 class RendererInterface
