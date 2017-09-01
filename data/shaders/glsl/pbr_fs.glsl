@@ -117,10 +117,12 @@ void main()
 		// Diffuse scattering happens due to light being refracted multiple times by a dielectric medium.
 		// Metals on the other hand either reflect or absorb energy, so diffuse contribution is always zero.
 		// To be energy conserving we must scale diffuse BRDF contribution based on Fresnel factor & metalness.
-		vec3 kd = mix(vec3(0.0), vec3(1.0) - F, metalness);
+		vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metalness);
 
 		// Lambert diffuse BRDF.
-		vec3 diffuseBRDF = kd * (albedo / PI);
+		// We don't scale by 1/PI for lighting & material units to be more convenient.
+		// See: https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
+		vec3 diffuseBRDF = kd * albedo;
 
 		// Cook-Torrance specular microfacet BRDF.
 		vec3 specularBRDF = (F * D * G) / max(Epsilon, 4.0 * cosLi * cosLo);
@@ -142,10 +144,9 @@ void main()
 		vec3 F = fresnelSchlick(F0, cosLo);
 
 		// Get diffuse contribution factor (as with direct lighting).
-		vec3 kd = mix(vec3(0.0), vec3(1.0) - F, metalness);
+		vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metalness);
 
-		// Irradiance map is already pre-filtered with Lambertian BRDF (assuming white albedo of 1.0),
-		// no need to scale by 1/PI.
+		// Irradiance map contains exitant radiance assuming Lambertian BRDF, no need to scale by 1/PI here either.
 		vec3 diffuseIBL = kd * albedo * irradiance;
 
 		// Sample pre-filtered specular reflection environment at correct mipmap level.
@@ -153,7 +154,7 @@ void main()
 		vec3 specularIrradiance = textureLod(specularTexture, Lr, roughness * specularTextureLevels).rgb;
 
 		// Split-sum approximation factors for Cook-Torrance specular BRDF.
-		vec2 specularBRDF = texture(specularBRDF_LUT, vec2(roughness, cosLo)).rg;
+		vec2 specularBRDF = texture(specularBRDF_LUT, vec2(cosLo, roughness)).rg;
 
 		// Total specular IBL contribution.
 		vec3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;

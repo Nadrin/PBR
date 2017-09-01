@@ -201,6 +201,8 @@ void Renderer::setup()
 		});
 
 		m_spBRDF_LUT = createTexture(GL_TEXTURE_2D, 256, 256, GL_RG16F, 1);
+		glTextureParameteri(m_spBRDF_LUT.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(m_spBRDF_LUT.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		glUseProgram(spBRDFProgram);
 		glBindImageTexture(0, m_spBRDF_LUT.id, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);

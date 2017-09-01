@@ -90,13 +90,14 @@ void main(void)
 
 	// Monte Carlo integration of hemispherical irradiance.
 	// As a small optimization this also includes Lambertian BRDF assuming perfectly white surface (albedo of 1.0)
-	// so we don't need to normalize in PBR fragment shader (so technically it makes it outgoing radiance I think).
+	// so we don't need to normalize in PBR fragment shader (so technically it encodes exitant radiance rather than irradiance).
 	vec3 irradiance = vec3(0);
 	for(uint i=0; i<NumSamples; ++i) {
 		vec2 u  = sampleHammersley(i);
 		vec3 Li = tangentToWorld(sampleHemisphere(u.x, u.y), N, S, T);
 		float cosTheta = max(0.0, dot(Li, N));
 
+		// PIs here cancel out because of division by pdf.
 		irradiance += 2.0 * textureLod(inputTexture, Li, 0).rgb * cosTheta;
 	}
 	irradiance /= vec3(NumSamples);

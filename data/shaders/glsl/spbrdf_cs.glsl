@@ -8,7 +8,7 @@
 
 const float PI = 3.141592;
 const float TwoPI = 2 * PI;
-const float Epsilon = 0.00001;
+const float Epsilon = 0.001; // This program needs larger eps.
 
 const uint NumSamples = 1024;
 const float InvNumSamples = 1.0 / float(NumSamples);
