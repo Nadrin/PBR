@@ -27,7 +27,7 @@ enum UniformLocations : GLuint
 	SpecularMapRoughness = 0,
 };
 
-GLFWwindow* Renderer::initialize(int width, int height, int samples)
+GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -60,6 +60,10 @@ GLFWwindow* Renderer::initialize(int width, int height, int samples)
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 
+	GLint maxSupportedSamples;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSupportedSamples);
+
+	const int samples = glm::min(maxSamples, maxSupportedSamples);
 	m_framebuffer = createFrameBuffer(width, height, samples, GL_RGBA16F, GL_DEPTH24_STENCIL8);
 	if(samples > 0) {
 		m_resolveFramebuffer = createFrameBuffer(width, height, 0, GL_RGBA16F, GL_NONE);
@@ -68,7 +72,7 @@ GLFWwindow* Renderer::initialize(int width, int height, int samples)
 		m_resolveFramebuffer = m_framebuffer;
 	}
 
-	std::printf("OpenGL %s [%s %s]\n", glGetString(GL_VERSION), glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+	std::printf("OpenGL 4.5 Renderer [%s]\n", glGetString(GL_RENDERER));
 	return window;
 }
 
@@ -340,14 +344,7 @@ Texture Renderer::createTexture(GLenum target, int width, int height, GLenum int
 	Texture texture;
 	texture.width  = width;
 	texture.height = height;
-	texture.levels = levels;
-	
-	if(texture.levels <= 0) {
-		texture.levels = 1;
-		while((width|height) >> texture.levels) {
-			++texture.levels;
-		}
-	}
+	texture.levels = (levels > 0) ? levels : Utility::numMipmapLevels(width, height);
 	
 	glCreateTextures(target, 1, &texture.id);
 	glTextureStorage2D(texture.id, texture.levels, internalformat, width, height);

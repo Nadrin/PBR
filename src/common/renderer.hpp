@@ -34,7 +34,7 @@ class RendererInterface
 public:
 	virtual ~RendererInterface() = default;
 
-	virtual GLFWwindow* initialize(int width, int height, int samples) = 0;
+	virtual GLFWwindow* initialize(int width, int height, int maxSamples) = 0;
 	virtual void shutdown() = 0;
 	virtual void setup() = 0;
 	virtual void render(GLFWwindow* window, const ViewSettings& view, const SceneSettings& scene) = 0;

@@ -40,7 +40,7 @@ struct Texture
 class Renderer final : public RendererInterface
 {
 public:
-	GLFWwindow* initialize(int width, int height, int samples) override;
+	GLFWwindow* initialize(int width, int height, int maxSamples) override;
 	void shutdown() override;
 	void setup() override;
 	void render(GLFWwindow* window, const ViewSettings& view, const SceneSettings& scene) override;
