@@ -7,6 +7,7 @@ API | Implementation status
 --- | ---------------------
 OpenGL 4.5 | Done
 Vulkan | Pending
+Direct3D 11 | Done
 Direct3D 12 | Pending
 
 ## Bibliography

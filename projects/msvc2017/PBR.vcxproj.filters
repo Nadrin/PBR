@@ -16,6 +16,9 @@
     <Filter Include="shaders\glsl">
       <UniqueIdentifier>{758360b6-204a-487f-b2c8-d295ce61a883}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\hlsl">
+      <UniqueIdentifier>{7a2a99b0-3eea-4e60-9927-5fc99dc0c4ef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\opengl.cpp">
@@ -42,6 +45,9 @@
     <ClCompile Include="..\..\src\common\application.cpp">
       <Filter>src\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\d3d11.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\opengl.hpp">
@@ -61,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\common\application.hpp">
       <Filter>src\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\d3d11.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -95,8 +104,31 @@
       <Filter>shaders\glsl</Filter>
     </None>
     <None Include="..\..\README.md" />
+    <None Include="..\..\data\shaders\hlsl\pbr.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\tonemap.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\skybox.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\equirect2cube.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\spmap.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\COPYING.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\data\shaders\hlsl\irmap.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\data\shaders\hlsl\spbrdf.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@
     <ClCompile Include="..\..\src\common\image.cpp" />
     <ClCompile Include="..\..\src\common\mesh.cpp" />
     <ClCompile Include="..\..\src\common\utils.cpp" />
+    <ClCompile Include="..\..\src\d3d11.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
   </ItemGroup>
@@ -26,6 +27,7 @@
     <ClInclude Include="..\..\src\common\image.hpp" />
     <ClInclude Include="..\..\src\common\mesh.hpp" />
     <ClInclude Include="..\..\src\common\utils.hpp" />
+    <ClInclude Include="..\..\src\d3d11.hpp" />
     <ClInclude Include="..\..\src\opengl.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +45,41 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\COPYING.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\pbr.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\tonemap.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\skybox.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\equirect2cube.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\spmap.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\irmap.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\data\shaders\hlsl\spbrdf.hlsl">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -96,7 +133,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)\..\..\lib\glfw\win64;$(ProjectDir)\..\..\lib\assimp\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3dll.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3dll.lib;assimp.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -116,7 +153,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)\..\..\lib\glfw\win64;$(ProjectDir)\..\..\lib\assimp\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3dll.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3dll.lib;assimp.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
