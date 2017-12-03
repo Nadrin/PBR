@@ -35,6 +35,9 @@ std::shared_ptr<Image> Image::fromFile(const std::string& filename, int channels
 			image->m_hdr = false;
 		}
 	}
+	if(channels > 0) {
+		image->m_channels = channels;
+	}
 
 	if(!image->m_pixels) {
 		throw std::runtime_error("Failed to load image file: " + filename);

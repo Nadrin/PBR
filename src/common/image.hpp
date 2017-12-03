@@ -28,6 +28,11 @@ public:
 		assert(m_channels * sizeof(T) == bytesPerPixel());
 		return reinterpret_cast<const T*>(m_pixels.get());
 	}
+	template<>
+	const void* pixels() const
+	{
+		return reinterpret_cast<const void*>(m_pixels.get());
+	}
 
 private:
 	Image();
