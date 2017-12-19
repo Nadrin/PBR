@@ -354,8 +354,8 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 		m_normalTexture.srv.Get(),
 		m_metalnessTexture.srv.Get(),
 		m_roughnessTexture.srv.Get(),
-		m_irmapTexture.srv.Get(),
 		m_envTexture.srv.Get(),
+		m_irmapTexture.srv.Get(),
 		m_spBRDF_LUT.srv.Get(),
 	};
 	ID3D11SamplerState* const pbrModelSamplers[] = {
@@ -688,7 +688,7 @@ ComPtr<ID3D11Buffer> Renderer::createConstantBuffer(const void* data, size_t siz
 	return buffer;
 }
 
-ComPtr<ID3DBlob> Renderer::compileShader(const std::string& filename, const std::string& entryPoint, const std::string& target)
+ComPtr<ID3DBlob> Renderer::compileShader(const std::string& filename, const std::string& entryPoint, const std::string& profile)
 {
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if _DEBUG
@@ -701,7 +701,7 @@ ComPtr<ID3DBlob> Renderer::compileShader(const std::string& filename, const std:
 
 	std::printf("Compiling HLSL shader: %s [%s]\n", filename.c_str(), entryPoint.c_str());
 
-	if(FAILED(D3DCompileFromFile(Utility::convertToUTF16(filename).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), target.c_str(), flags, 0, &shader, &errorBlob))) {
+	if(FAILED(D3DCompileFromFile(Utility::convertToUTF16(filename).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint.c_str(), profile.c_str(), flags, 0, &shader, &errorBlob))) {
 		std::string errorMsg = "Shader compilation failed: " + filename;
 		if(errorBlob) {
 			errorMsg += std::string("\n") + static_cast<const char*>(errorBlob->GetBufferPointer());
