@@ -50,8 +50,8 @@ Texture2D albedoTexture : register(t0);
 Texture2D normalTexture : register(t1);
 Texture2D metalnessTexture : register(t2);
 Texture2D roughnessTexture : register(t3);
-TextureCube irradianceTexture : register(t4);
-TextureCube specularTexture : register(t5);
+TextureCube specularTexture : register(t4);
+TextureCube irradianceTexture : register(t5);
 Texture2D specularBRDF_LUT : register(t6);
 
 SamplerState defaultSampler : register(s0);

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="src">
@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\src\d3d11.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\d3d12.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\opengl.hpp">
@@ -69,6 +72,9 @@
       <Filter>src\common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\d3d11.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\d3d12.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -119,16 +125,23 @@
     <None Include="..\..\data\shaders\hlsl\spmap.hlsl">
       <Filter>shaders\hlsl</Filter>
     </None>
+    <None Include="..\..\data\shaders\hlsl\irmap.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\spbrdf.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\debug.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\downsample.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
+    <None Include="..\..\data\shaders\hlsl\downsample_array.hlsl">
+      <Filter>shaders\hlsl</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\COPYING.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="..\..\data\shaders\hlsl\irmap.hlsl">
-      <Filter>shaders\hlsl</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\data\shaders\hlsl\spbrdf.hlsl">
-      <Filter>shaders\hlsl</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

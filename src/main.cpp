@@ -12,6 +12,7 @@
 
 #if _WIN32
 #include "d3d11.hpp"
+#include "d3d12.hpp"
 #endif // _WIN32
 
 int main(int argc, char* argv[])
@@ -25,10 +26,13 @@ int main(int argc, char* argv[])
 		else if(strcmp(argv[1], "-d3d11") == 0) {
 			renderer = new D3D11::Renderer;
 		}
+		else if(strcmp(argv[1], "-d3d12") == 0) {
+			renderer = new D3D12::Renderer;
+		}
 #endif // _WIN32
 		else {
 #if _WIN32
-			std::fprintf(stderr, "Usage: %s [-opengl|-d3d11]\n", argv[0]);
+			std::fprintf(stderr, "Usage: %s [-opengl|-d3d11|-d3d12]\n", argv[0]);
 #else
 			std::fprintf(stderr, "Usage: %s [-opengl]\n", argv[0]);
 #endif // _WIN32
