@@ -33,8 +33,8 @@ struct FrameBuffer
 	ComPtr<ID3D11RenderTargetView> rtv;
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11DepthStencilView> dsv;
-	int width, height;
-	int samples;
+	UINT width, height;
+	UINT samples;
 };
 
 struct ShaderProgram
@@ -54,8 +54,8 @@ struct Texture
 	ComPtr<ID3D11Texture2D> texture;
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11UnorderedAccessView> uav;
-	int width, height;
-	int levels;
+	UINT width, height;
+	UINT levels;
 };
 
 class Renderer final : public RendererInterface
@@ -73,16 +73,16 @@ private:
 	ComputeProgram createComputeProgram(const ComPtr<ID3DBlob>& csBytecode) const;
 	ComPtr<ID3D11SamplerState> createSamplerState(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE addressMode) const;
 
-	Texture createTexture(int width, int height, DXGI_FORMAT format, int levels=0) const;
-	Texture createTexture(const std::shared_ptr<class Image>& image, DXGI_FORMAT format, int levels=0) const;
-	Texture createTextureCube(int width, int height, DXGI_FORMAT format, int levels=0) const;
+	Texture createTexture(UINT width, UINT height, DXGI_FORMAT format, UINT levels=0) const;
+	Texture createTexture(const std::shared_ptr<class Image>& image, DXGI_FORMAT format, UINT levels=0) const;
+	Texture createTextureCube(UINT width, UINT height, DXGI_FORMAT format, UINT levels=0) const;
 
-	void createTextureUAV(Texture& texture, int mipSlice) const;
+	void createTextureUAV(Texture& texture, UINT mipSlice) const;
 
-	FrameBuffer createFrameBuffer(int width, int height, int samples, DXGI_FORMAT colorFormat, DXGI_FORMAT depthstencilFormat) const;
+	FrameBuffer createFrameBuffer(UINT width, UINT height, UINT samples, DXGI_FORMAT colorFormat, DXGI_FORMAT depthstencilFormat) const;
 	void resolveFrameBuffer(const FrameBuffer& srcfb, const FrameBuffer& dstfb, DXGI_FORMAT format) const;
 
-	ComPtr<ID3D11Buffer> createConstantBuffer(const void* data, size_t size) const;
+	ComPtr<ID3D11Buffer> createConstantBuffer(const void* data, UINT size) const;
 	template<typename T> ComPtr<ID3D11Buffer> createConstantBuffer(const T* data=nullptr) const
 	{
 		static_assert(sizeof(T) == Utility::roundToPowerOfTwo(sizeof(T), 16));

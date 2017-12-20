@@ -12,9 +12,9 @@
 
 namespace OpenGL {
 
-struct VertexBuffer
+struct MeshBuffer
 {
-	VertexBuffer() : vbo(0), ibo(0), vao(0) {}
+	MeshBuffer() : vbo(0), ibo(0), vao(0) {}
 	GLuint vbo, ibo, vao;
 	GLuint numElements;
 };
@@ -57,10 +57,10 @@ private:
 	static void resolveFramebuffer(const FrameBuffer& srcfb, const FrameBuffer& dstfb);
 	static void deleteFrameBuffer(FrameBuffer& fb);
 
-	static VertexBuffer createVertexBuffer(const std::shared_ptr<class Mesh>& mesh);
-	static void deleteVertexBuffer(VertexBuffer& buffer);
+	static MeshBuffer createMeshBuffer(const std::shared_ptr<class Mesh>& mesh);
+	static void deleteMeshBuffer(MeshBuffer& buffer);
 
-	static VertexBuffer createClipSpaceQuad();
+	static MeshBuffer createClipSpaceQuad();
 
 	static GLuint createUniformBuffer(const void* data, size_t size);
 	template<typename T> GLuint createUniformBuffer(const T* data=nullptr)
@@ -79,9 +79,9 @@ private:
 	FrameBuffer m_framebuffer;
 	FrameBuffer m_resolveFramebuffer;
 
-	VertexBuffer m_screenQuad;
-	VertexBuffer m_skybox;
-	VertexBuffer m_pbrModel;
+	MeshBuffer m_screenQuad;
+	MeshBuffer m_skybox;
+	MeshBuffer m_pbrModel;
 
 	GLuint m_tonemapProgram;
 	GLuint m_skyboxProgram;

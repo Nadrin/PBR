@@ -37,8 +37,8 @@ layout(binding=0) uniform sampler2D albedoTexture;
 layout(binding=1) uniform sampler2D normalTexture;
 layout(binding=2) uniform sampler2D metalnessTexture;
 layout(binding=3) uniform sampler2D roughnessTexture;
-layout(binding=4) uniform samplerCube irradianceTexture;
-layout(binding=5) uniform samplerCube specularTexture;
+layout(binding=4) uniform samplerCube specularTexture;
+layout(binding=5) uniform samplerCube irradianceTexture;
 layout(binding=6) uniform sampler2D specularBRDF_LUT;
 
 // GGX/Towbridge-Reitz normal distribution function.

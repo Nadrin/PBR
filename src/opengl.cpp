@@ -32,16 +32,6 @@ struct ShadingUB
 	glm::vec4 eyePosition;
 };
 
-enum UniformLocations : GLuint
-{
-	ViewProjectionMatrix = 0,
-	SceneRotationMatrix = 1,
-	EyePosition = 2,
-	Lights = 10,
-
-	SpecularMapRoughness = 0,
-};
-
 GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -101,9 +91,9 @@ void Renderer::shutdown()
 	glDeleteBuffers(1, &m_transformUB);
 	glDeleteBuffers(1, &m_shadingUB);
 
-	deleteVertexBuffer(m_screenQuad);
-	deleteVertexBuffer(m_skybox);
-	deleteVertexBuffer(m_pbrModel);
+	deleteMeshBuffer(m_screenQuad);
+	deleteMeshBuffer(m_skybox);
+	deleteMeshBuffer(m_pbrModel);
 	
 	glDeleteProgram(m_tonemapProgram);
 	glDeleteProgram(m_skyboxProgram);
@@ -137,13 +127,13 @@ void Renderer::setup()
 		compileShader("shaders/glsl/tonemap_fs.glsl", GL_FRAGMENT_SHADER)
 	});
 
-	m_skybox = createVertexBuffer(Mesh::fromFile("meshes/skybox.obj"));
+	m_skybox = createMeshBuffer(Mesh::fromFile("meshes/skybox.obj"));
 	m_skyboxProgram = linkProgram({
 		compileShader("shaders/glsl/skybox_vs.glsl", GL_VERTEX_SHADER),
 		compileShader("shaders/glsl/skybox_fs.glsl", GL_FRAGMENT_SHADER)
 	});
 
-	m_pbrModel = createVertexBuffer(Mesh::fromFile("meshes/cerberus.fbx"));
+	m_pbrModel = createMeshBuffer(Mesh::fromFile("meshes/cerberus.fbx"));
 	m_pbrProgram = linkProgram({
 		compileShader("shaders/glsl/pbr_vs.glsl", GL_VERTEX_SHADER),
 		compileShader("shaders/glsl/pbr_fs.glsl", GL_FRAGMENT_SHADER)
@@ -197,7 +187,7 @@ void Renderer::setup()
 		for(int level=1, size=512; level<=m_envTexture.levels; ++level, size/=2) {
 			const GLuint numGroups = glm::max(1, size/32);
 			glBindImageTexture(0, m_envTexture.id, level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-			glProgramUniform1f(spmapProgram, SpecularMapRoughness, level * deltaRoughness);
+			glProgramUniform1f(spmapProgram, 0, level * deltaRoughness);
 			glDispatchCompute(numGroups, numGroups, 6);
 		}
 		glDeleteProgram(spmapProgram);
@@ -273,13 +263,13 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 		glNamedBufferSubData(m_shadingUB, 0, sizeof(ShadingUB), &shadingUniforms);
 	}
 
-	// Bind uniform buffers.
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformUB);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_shadingUB);
-
 	// Prepare framebuffer for rendering.
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer.id);
 	glClear(GL_DEPTH_BUFFER_BIT); // No need to clear color, since we'll overwrite the screen with our skybox.
+	
+	// Bind uniform buffers.
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformUB);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_shadingUB);
 
 	// Draw skybox.
 	glDisable(GL_DEPTH_TEST);
@@ -288,15 +278,15 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	glBindVertexArray(m_skybox.vao);
 	glDrawElements(GL_TRIANGLES, m_skybox.numElements, GL_UNSIGNED_INT, 0);
 
-	// Draw model.
+	// Draw PBR model.
 	glEnable(GL_DEPTH_TEST);
 	glUseProgram(m_pbrProgram);
 	glBindTextureUnit(0, m_albedoTexture.id);
 	glBindTextureUnit(1, m_normalTexture.id);
 	glBindTextureUnit(2, m_metalnessTexture.id);
 	glBindTextureUnit(3, m_roughnessTexture.id);
-	glBindTextureUnit(4, m_irmapTexture.id);
-	glBindTextureUnit(5, m_envTexture.id);
+	glBindTextureUnit(4, m_envTexture.id);
+	glBindTextureUnit(5, m_irmapTexture.id);
 	glBindTextureUnit(6, m_spBRDF_LUT.id);
 	glBindVertexArray(m_pbrModel.vao);
 	glDrawElements(GL_TRIANGLES, m_pbrModel.numElements, GL_UNSIGNED_INT, 0);
@@ -304,7 +294,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Resolve multisample framebuffer.
 	resolveFramebuffer(m_framebuffer, m_resolveFramebuffer);
 
-	// Draw to window viewport (with tonemapping and gamma correction).
+	// Draw a full screen quad with tonemapping and gamma correction shader (post-processing).
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(m_tonemapProgram);
 	glBindTextureUnit(0, m_resolveFramebuffer.colorTarget);
@@ -460,7 +450,7 @@ void Renderer::resolveFramebuffer(const FrameBuffer& srcfb, const FrameBuffer& d
 	}
 	assert(attachments.size() > 0);
 
-	glBlitNamedFramebuffer(srcfb.id, dstfb.id, 0, 0, srcfb.width-1, srcfb.height-1, 0, 0, dstfb.width-1, dstfb.height-1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitNamedFramebuffer(srcfb.id, dstfb.id, 0, 0, srcfb.width, srcfb.height, 0, 0, dstfb.width, dstfb.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glInvalidateNamedFramebufferData(srcfb.id, (GLsizei)attachments.size(), &attachments[0]);
 }
 	
@@ -483,9 +473,9 @@ void Renderer::deleteFrameBuffer(FrameBuffer& fb)
 	std::memset(&fb, 0, sizeof(FrameBuffer));
 }
 
-VertexBuffer Renderer::createVertexBuffer(const std::shared_ptr<class Mesh>& mesh)
+MeshBuffer Renderer::createMeshBuffer(const std::shared_ptr<class Mesh>& mesh)
 {
-	VertexBuffer buffer;
+	MeshBuffer buffer;
 	buffer.numElements = static_cast<GLuint>(mesh->faces().size()) * 3;
 
 	const size_t vertexDataSize = mesh->vertices().size() * sizeof(Mesh::Vertex);
@@ -506,8 +496,22 @@ VertexBuffer Renderer::createVertexBuffer(const std::shared_ptr<class Mesh>& mes
 	}
 	return buffer;
 }
+
+void Renderer::deleteMeshBuffer(MeshBuffer& buffer)
+{
+	if(buffer.vao) {
+		glDeleteVertexArrays(1, &buffer.vao);
+	}
+	if(buffer.vbo) {
+		glDeleteBuffers(1, &buffer.vbo);
+	}
+	if(buffer.ibo) {
+		glDeleteBuffers(1, &buffer.ibo);
+	}
+	std::memset(&buffer, 0, sizeof(MeshBuffer));
+}
 	
-VertexBuffer Renderer::createClipSpaceQuad()
+MeshBuffer Renderer::createClipSpaceQuad()
 {
 	static const GLfloat vertices[] = {
 		 1.0f,  1.0f, 1.0f, 1.0f,
@@ -516,7 +520,7 @@ VertexBuffer Renderer::createClipSpaceQuad()
 		-1.0f, -1.0f, 0.0f, 0.0f,
 	};
 
-	VertexBuffer buffer;
+	MeshBuffer buffer;
 	glCreateBuffers(1, &buffer.vbo);
 	glNamedBufferStorage(buffer.vbo, sizeof(vertices), vertices, 0);
 
@@ -536,20 +540,6 @@ GLuint Renderer::createUniformBuffer(const void* data, size_t size)
 	glCreateBuffers(1, &ubo);
 	glNamedBufferStorage(ubo, size, data, GL_DYNAMIC_STORAGE_BIT);
 	return ubo;
-}
-
-void Renderer::deleteVertexBuffer(VertexBuffer& buffer)
-{
-	if(buffer.vao) {
-		glDeleteVertexArrays(1, &buffer.vao);
-	}
-	if(buffer.vbo) {
-		glDeleteBuffers(1, &buffer.vbo);
-	}
-	if(buffer.ibo) {
-		glDeleteBuffers(1, &buffer.ibo);
-	}
-	std::memset(&buffer, 0, sizeof(VertexBuffer));
 }
 
 #if _DEBUG

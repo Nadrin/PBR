@@ -542,15 +542,15 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Update shading constant buffer (for pixel shader).
 	{
 		ShadingCB* shadingConstants = shadingCBV.as<ShadingCB>();
-		shadingConstants->eyePosition = glm::vec4(eyePosition, 0.0f);
+		shadingConstants->eyePosition = glm::vec4{eyePosition, 0.0f};
 		for(int i=0; i<SceneSettings::NumLights; ++i) {
 			const SceneSettings::Light& light = scene.lights[i];
-			shadingConstants->lights[i].direction = glm::vec4(light.direction, 0.0f);
+			shadingConstants->lights[i].direction = glm::vec4{light.direction, 0.0f};
 			if(light.enabled) {
-				shadingConstants->lights[i].radiance = glm::vec4(light.radiance, 0.0f);
+				shadingConstants->lights[i].radiance = glm::vec4{light.radiance, 0.0f};
 			}
 			else {
-				shadingConstants->lights[i].radiance = glm::vec4();
+				shadingConstants->lights[i].radiance = glm::vec4{};
 			}
 		}
 	}

@@ -247,8 +247,8 @@ void Renderer::setup()
 
 			// Pre-filter rest of the mip chain.
 			const float deltaRoughness = 1.0f / glm::max(float(m_envTexture.levels-1), 1.0f);
-			for(int level=1, size=512; level<m_envTexture.levels; ++level, size/=2) {
-				const UINT numGroups = glm::max(1, size/32);
+			for(UINT level=1, size=512; level<m_envTexture.levels; ++level, size/=2) {
+				const UINT numGroups = glm::max<UINT>(1, size/32);
 				createTextureUAV(m_envTexture, level);
 
 				const SpecularMapFilterSettingsCB spmapConstants = { level * deltaRoughness };
@@ -313,15 +313,15 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Update shading constant buffer (for pixel shader).
 	{
 		ShadingCB shadingConstants;
-		shadingConstants.eyePosition = glm::vec4(eyePosition, 0.0f);
+		shadingConstants.eyePosition = glm::vec4{eyePosition, 0.0f};
 		for(int i=0; i<SceneSettings::NumLights; ++i) {
 			const SceneSettings::Light& light = scene.lights[i];
-			shadingConstants.lights[i].direction = glm::vec4(light.direction, 0.0f);
+			shadingConstants.lights[i].direction = glm::vec4{light.direction, 0.0f};
 			if(light.enabled) {
-				shadingConstants.lights[i].radiance = glm::vec4(light.radiance, 0.0f);
+				shadingConstants.lights[i].radiance = glm::vec4{light.radiance, 0.0f};
 			}
 			else {
-				shadingConstants.lights[i].radiance = glm::vec4();
+				shadingConstants.lights[i].radiance = glm::vec4{};
 			}
 		}
 		m_context->UpdateSubresource(m_shadingCB.Get(), 0, nullptr, &shadingConstants, 0, 0);
@@ -348,7 +348,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	m_context->OMSetDepthStencilState(m_skyboxDepthStencilState.Get(), 0);
 	m_context->DrawIndexed(m_skybox.numElements, 0, 0);
 
-	// Draw model.
+	// Draw PBR model.
 	ID3D11ShaderResourceView* const pbrModelSRVs[] = {
 		m_albedoTexture.srv.Get(),
 		m_normalTexture.srv.Get(),
@@ -376,7 +376,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Resolve multisample framebuffer.
 	resolveFrameBuffer(m_framebuffer, m_resolveFramebuffer, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-	// Draw to window viewport (with tonemapping and gamma correction).
+	// Draw a full screen quad with tonemapping and gamma correction shader (post-processing).
 	m_context->OMSetRenderTargets(1, m_backBufferRTV.GetAddressOf(), nullptr);
 	m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_context->IASetInputLayout(m_tonemapProgram.inputLayout.Get());
@@ -452,7 +452,7 @@ MeshBuffer Renderer::createClipSpaceQuad() const
 	return buffer;
 }
 	
-Texture Renderer::createTexture(int width, int height, DXGI_FORMAT format, int levels) const
+Texture Renderer::createTexture(UINT width, UINT height, DXGI_FORMAT format, UINT levels) const
 {
 	Texture texture;
 	texture.width  = width;
@@ -488,7 +488,7 @@ Texture Renderer::createTexture(int width, int height, DXGI_FORMAT format, int l
 	return texture;
 }
 
-Texture Renderer::createTextureCube(int width, int height, DXGI_FORMAT format, int levels) const
+Texture Renderer::createTextureCube(UINT width, UINT height, DXGI_FORMAT format, UINT levels) const
 {
 	Texture texture;
 	texture.width  = width;
@@ -525,7 +525,7 @@ Texture Renderer::createTextureCube(int width, int height, DXGI_FORMAT format, i
 	return texture;
 }
 	
-Texture Renderer::createTexture(const std::shared_ptr<Image>& image, DXGI_FORMAT format, int levels) const
+Texture Renderer::createTexture(const std::shared_ptr<Image>& image, DXGI_FORMAT format, UINT levels) const
 {
 	Texture texture = createTexture(image->width(), image->height(), format, levels);
 	m_context->UpdateSubresource(texture.texture.Get(), 0, nullptr, image->pixels<void>(), image->pitch(), 0);
@@ -535,7 +535,7 @@ Texture Renderer::createTexture(const std::shared_ptr<Image>& image, DXGI_FORMAT
 	return texture;
 }
 	
-void Renderer::createTextureUAV(Texture& texture, int mipSlice) const
+void Renderer::createTextureUAV(Texture& texture, UINT mipSlice) const
 {
 	assert(texture.texture);
 
@@ -602,7 +602,7 @@ ComputeProgram Renderer::createComputeProgram(const ComPtr<ID3DBlob>& csBytecode
 	return program;
 }
 
-FrameBuffer Renderer::createFrameBuffer(int width, int height, int samples, DXGI_FORMAT colorFormat, DXGI_FORMAT depthstencilFormat) const
+FrameBuffer Renderer::createFrameBuffer(UINT width, UINT height, UINT samples, DXGI_FORMAT colorFormat, DXGI_FORMAT depthstencilFormat) const
 {
 	FrameBuffer fb;
 	fb.width   = width;
@@ -670,7 +670,7 @@ void Renderer::resolveFrameBuffer(const FrameBuffer& srcfb, const FrameBuffer& d
 	}
 }
 
-ComPtr<ID3D11Buffer> Renderer::createConstantBuffer(const void* data, size_t size) const
+ComPtr<ID3D11Buffer> Renderer::createConstantBuffer(const void* data, UINT size) const
 {
 	D3D11_BUFFER_DESC desc = {};
 	desc.ByteWidth = static_cast<UINT>(size);

@@ -36,11 +36,7 @@ struct DescriptorHeap
 	}
 	Descriptor operator[](UINT index) const
 	{
-#ifdef _DEBUG
-		if(index >= numDescriptorsInHeap) {
-			throw std::out_of_range("Invalid descriptor index");
-		}
-#endif
+		assert(index < numDescriptorsInHeap);
 		return {
 			D3D12_CPU_DESCRIPTOR_HANDLE{heap->GetCPUDescriptorHandleForHeapStart().ptr + index * descriptorSize},
 			D3D12_GPU_DESCRIPTOR_HANDLE{heap->GetGPUDescriptorHandleForHeapStart().ptr + index * descriptorSize}
