@@ -1,6 +1,6 @@
 /*
  * Physically Based Rendering
- * Copyright (c) 2017 Micha≥ Siejak
+ * Copyright (c) 2017 Micha≈Ç Siejak
  */
 
 #include <stdexcept>

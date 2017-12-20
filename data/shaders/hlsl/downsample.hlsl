@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Micha≥ Siejak
+// Copyright (c) 2017 Micha≈Ç Siejak
 
 // Texture mip level downsampling with linear filtering (used in manual mip chain generation).
 

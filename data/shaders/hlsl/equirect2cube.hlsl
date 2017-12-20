@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Micha≥ Siejak
+// Copyright (c) 2017 Micha≈Ç Siejak
 
 // Converts equirectangular (lat-long) projection texture into a proper cubemap.
 

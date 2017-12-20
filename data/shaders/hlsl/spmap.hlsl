@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Micha≥ Siejak
+// Copyright (c) 2017 Micha≈Ç Siejak
 
 // Pre-filters environment cube map using GGX NDF importance sampling.
 // Part of specular IBL split-sum approximation.
