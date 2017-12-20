@@ -8,7 +8,6 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include "common/mesh.hpp"
 #include "common/image.hpp"
@@ -16,6 +15,22 @@
 #include "opengl.hpp"
 
 namespace OpenGL {
+
+struct TransformUB
+{
+	glm::mat4 viewProjectionMatrix;
+	glm::mat4 skyProjectionMatrix;
+	glm::mat4 sceneRotationMatrix;
+};
+
+struct ShadingUB
+{
+	struct {
+		glm::vec4 direction;
+		glm::vec4 radiance;
+	} lights[SceneSettings::NumLights];
+	glm::vec4 eyePosition;
+};
 
 enum UniformLocations : GLuint
 {
@@ -83,6 +98,9 @@ void Renderer::shutdown()
 	}
 	deleteFrameBuffer(m_framebuffer);
 
+	glDeleteBuffers(1, &m_transformUB);
+	glDeleteBuffers(1, &m_shadingUB);
+
 	deleteVertexBuffer(m_screenQuad);
 	deleteVertexBuffer(m_skybox);
 	deleteVertexBuffer(m_pbrModel);
@@ -107,6 +125,10 @@ void Renderer::setup()
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glFrontFace(GL_CCW);
+
+	// Create uniform buffers.
+	m_transformUB = createUniformBuffer<TransformUB>();
+	m_shadingUB = createUniformBuffer<ShadingUB>();
 
 	// Load assets & compile/link rendering programs.
 	m_screenQuad = createClipSpaceQuad();
@@ -225,27 +247,35 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	const glm::mat4 viewMatrix = glm::translate(glm::mat4(), {0.0f, 0.0f, -view.distance}) * viewRotationMatrix;
 	const glm::vec3 eyePosition = glm::inverse(viewMatrix)[3];
 
-	// Set skybox program uniforms.
-	glProgramUniformMatrix4fv(m_skyboxProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix * viewRotationMatrix));
-
-	// Set PBR program uniforms.
-	glProgramUniformMatrix4fv(m_pbrProgram, ViewProjectionMatrix, 1, GL_FALSE, glm::value_ptr(projectionMatrix * viewMatrix));
-	glProgramUniformMatrix4fv(m_pbrProgram, SceneRotationMatrix, 1, GL_FALSE, glm::value_ptr(sceneRotationMatrix));
-	glProgramUniform3fv(m_pbrProgram, EyePosition, 1, glm::value_ptr(eyePosition));
-
-	// Analytic lights uniforms.
-	for(int i=0; i<SceneSettings::NumLights; ++i) {
-		const SceneSettings::Light& light = scene.lights[i];
-		const GLuint location = Lights + 2*i;
-
-		glProgramUniform3fv(m_pbrProgram, location, 1, glm::value_ptr(light.direction));
-		if(light.enabled) {
-			glProgramUniform3fv(m_pbrProgram, location+1, 1, glm::value_ptr(light.radiance));
-		}
-		else {
-			glProgramUniform3f(m_pbrProgram, location+1, 0.0f, 0.0f, 0.0f);
-		}
+	// Update transform uniform buffer.
+	{
+		TransformUB transformUniforms;
+		transformUniforms.viewProjectionMatrix = projectionMatrix * viewMatrix;
+		transformUniforms.skyProjectionMatrix  = projectionMatrix * viewRotationMatrix;
+		transformUniforms.sceneRotationMatrix  = sceneRotationMatrix;
+		glNamedBufferSubData(m_transformUB, 0, sizeof(TransformUB), &transformUniforms);
 	}
+
+	// Update shading uniform buffer.
+	{
+		ShadingUB shadingUniforms;
+		shadingUniforms.eyePosition = glm::vec4(eyePosition, 0.0f);
+		for(int i=0; i<SceneSettings::NumLights; ++i) {
+			const SceneSettings::Light& light = scene.lights[i];
+			shadingUniforms.lights[i].direction = glm::vec4{light.direction, 0.0f};
+			if(light.enabled) {
+				shadingUniforms.lights[i].radiance = glm::vec4{light.radiance, 0.0f};
+			}
+			else {
+				shadingUniforms.lights[i].radiance = glm::vec4{};
+			}
+		}
+		glNamedBufferSubData(m_shadingUB, 0, sizeof(ShadingUB), &shadingUniforms);
+	}
+
+	// Bind uniform buffers.
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformUB);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_shadingUB);
 
 	// Prepare framebuffer for rendering.
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer.id);
@@ -498,6 +528,14 @@ VertexBuffer Renderer::createClipSpaceQuad()
 		glVertexArrayAttribBinding(buffer.vao, i, i);
 	}
 	return buffer;
+}
+	
+GLuint Renderer::createUniformBuffer(const void* data, size_t size)
+{
+	GLuint ubo;
+	glCreateBuffers(1, &ubo);
+	glNamedBufferStorage(ubo, size, data, GL_DYNAMIC_STORAGE_BIT);
+	return ubo;
 }
 
 void Renderer::deleteVertexBuffer(VertexBuffer& buffer)

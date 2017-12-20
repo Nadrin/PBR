@@ -15,12 +15,8 @@ const int NumLights = 3;
 // Constant normal incidence Fresnel factor for all dielectrics.
 const vec3 Fdielectric = vec3(0.04);
 
-struct Light {
-	vec3 direction;
-	vec3 radiance;
-};
-
-in Vertex {
+in Vertex
+{
 	vec3 position;
 	vec2 texcoord;
 	mat3 tangentBasis;
@@ -28,8 +24,14 @@ in Vertex {
 
 out vec4 color;
 
-layout(location=2) uniform vec3 eyePosition;
-layout(location=10) uniform Light lights[NumLights];
+layout(std140, binding=1) uniform ShadingUniforms
+{
+	struct {
+		vec3 direction;
+		vec3 radiance;
+	} lights[NumLights];
+	vec3 eyePosition;
+};
 
 layout(binding=0) uniform sampler2D albedoTexture;
 layout(binding=1) uniform sampler2D normalTexture;

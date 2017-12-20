@@ -10,8 +10,12 @@ layout(location=2) in vec3 tangent;
 layout(location=3) in vec3 bitangent;
 layout(location=4) in vec2 texcoord;
 
-layout(location=0) uniform mat4 viewProjectionMatrix;
-layout(location=1) uniform mat4 sceneRotationMatrix;
+layout(std140, binding=0) uniform TransformUniforms
+{
+	mat4 viewProjectionMatrix;
+	mat4 skyProjectionMatrix;
+	mat4 sceneRotationMatrix;
+};
 
 out Vertex
 {

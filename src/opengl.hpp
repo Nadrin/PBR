@@ -62,6 +62,12 @@ private:
 
 	static VertexBuffer createClipSpaceQuad();
 
+	static GLuint createUniformBuffer(const void* data, size_t size);
+	template<typename T> GLuint createUniformBuffer(const T* data=nullptr)
+	{
+		return createUniformBuffer(data, sizeof(T));
+	}
+
 #if _DEBUG
 	static void logMessage(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 #endif
@@ -89,6 +95,9 @@ private:
 	Texture m_normalTexture;
 	Texture m_metalnessTexture;
 	Texture m_roughnessTexture;
+
+	GLuint m_transformUB;
+	GLuint m_shadingUB;
 };
 
 } // OpenGL
