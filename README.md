@@ -3,12 +3,12 @@
 
 An implementation of physically based shading model & image based lighting in various graphics APIs.
 
-API | Implementation status
---- | ---------------------
-OpenGL 4.5 | Done
-Vulkan | Pending
-Direct3D 11 | Done
-Direct3D 12 | Pending
+API         | SLOC | Implementation status
+------------|------|---------------
+OpenGL 4.5  | 521  | Done
+Vulkan      |      | In progress
+Direct3D 11 | 694  | Done
+Direct3D 12 | 1240 | Done
 
 ## Bibliography
 
