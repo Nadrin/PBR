@@ -67,6 +67,17 @@ Other resources that helped me in research & implementation:
 - [Advanced Global Illumination, 2nd ed.](https://www.amazon.com/Advanced-Global-Illumination-Second-Philip/dp/1568813074), Philip Dutré, Kavita Bala, Philippe Bekaert, 2006
 - [Photographic Tone Reproduction for Digital Images](https://www.cs.utah.edu/~reinhard/cdrom/), Erik Reinhard et al., 2002
 
+## Third party libraries
+
+This project makes use of the following open source libraries:
+
+- [Open Asset Import Library](http://assimp.sourceforge.net/)
+- [stb_image](https://github.com/nothings/stb)
+- [GLFW](http://www.glfw.org/)
+- [GLM](https://glm.g-truc.net/)
+- [D3D12 Helper Library](https://github.com/Microsoft/DirectX-Graphics-Samples/tree/master/Libraries/D3DX12)
+- [Glad](https://github.com/Dav1dde/glad) (used to generate OpenGL function loader)
+
 ## Included assets
 
 The following assets are bundled with the project:
