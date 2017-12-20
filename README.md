@@ -76,7 +76,7 @@ This project makes use of the following open source libraries:
 - [GLFW](http://www.glfw.org/)
 - [GLM](https://glm.g-truc.net/)
 - [D3D12 Helper Library](https://github.com/Microsoft/DirectX-Graphics-Samples/tree/master/Libraries/D3DX12)
-- [Glad](https://github.com/Dav1dde/glad) (used to generate OpenGL function loader)
+- [glad](https://github.com/Dav1dde/glad) (used to generate OpenGL function loader)
 
 ## Included assets
 

@@ -39,8 +39,6 @@ Application::Application()
 	m_sceneSettings.lights[0].radiance = glm::vec3{1.0f};
 	m_sceneSettings.lights[1].radiance = glm::vec3{1.0f};
 	m_sceneSettings.lights[2].radiance = glm::vec3{1.0f};
-
-	m_sceneSettings.lights[0].enabled = true;
 }
 
 Application::~Application()
