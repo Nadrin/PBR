@@ -159,7 +159,7 @@ private:
 	FrameBuffer createFrameBuffer(UINT width, UINT height, UINT samples, DXGI_FORMAT colorFormat, DXGI_FORMAT depthstencilFormat);
 	void resolveFrameBuffer(const FrameBuffer& srcfb, const FrameBuffer& dstfb, DXGI_FORMAT format) const;
 
-	ComPtr<ID3D12RootSignature> createRootSignature(const D3D12_ROOT_SIGNATURE_DESC& desc) const;
+	ComPtr<ID3D12RootSignature> createRootSignature(D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc) const;
 	
 	ConstantBufferView createConstantBufferView(const void* data, UINT size);
 	template<typename T> ConstantBufferView createConstantBufferView(const T* data=nullptr)
@@ -224,6 +224,8 @@ private:
 	ComPtr<ID3D12Fence> m_fence;
 	HANDLE m_fenceCompletionEvent;
 	mutable UINT64 m_fenceValues[NumFrames] = {};
+
+	D3D_ROOT_SIGNATURE_VERSION m_rootSignatureVersion;
 };
 
 } // D3D12
