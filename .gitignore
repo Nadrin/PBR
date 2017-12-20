@@ -2,3 +2,5 @@
 .vs/
 Debug/
 Release/
+data/*.exe
+data/*.dll

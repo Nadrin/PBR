@@ -152,6 +152,14 @@
       <AdditionalLibraryDirectories>$(ProjectDir)\..\..\lib\glfw\win64;$(ProjectDir)\..\..\lib\assimp\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3dll.lib;assimp.lib;d3d11.lib;d3d12.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>set ROOTDIR=$(SolutionDir)..\..
+copy /y $(TargetPath) %ROOTDIR%\data
+copy /y %ROOTDIR%\lib\assimp\win64\assimp.dll %ROOTDIR%\data
+copy /y %ROOTDIR%\lib\glfw\win64\glfw3.dll %ROOTDIR%\data
+</Command>
+      <Message>Deploy binaries to data directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -172,6 +180,14 @@
       <AdditionalLibraryDirectories>$(ProjectDir)\..\..\lib\glfw\win64;$(ProjectDir)\..\..\lib\assimp\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3dll.lib;assimp.lib;d3d11.lib;d3d12.lib;d3dcompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>set ROOTDIR=$(SolutionDir)..\..
+copy /y $(TargetPath) %ROOTDIR%\data
+copy /y %ROOTDIR%\lib\assimp\win64\assimp.dll %ROOTDIR%\data
+copy /y %ROOTDIR%\lib\glfw\win64\glfw3.dll %ROOTDIR%\data
+</Command>
+      <Message>Deploy binaries to data directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,11 +6,45 @@ An implementation of physically based shading model & image based lighting in va
 ![Screenshot](https://media.githubusercontent.com/media/Nadrin/PBR/master/data/screenshot.jpg)
 
 API         | SLOC | Implementation status
-------------|------|---------------
+------------|------|----------------------
 OpenGL 4.5  | 521  | Done
 Vulkan      |      | In progress
 Direct3D 11 | 694  | Done
 Direct3D 12 | 1240 | Done
+
+## Building
+
+### Windows
+
+#### Prerequisites
+
+- Windows 10 or Windows Server 2016 (x64 versions)
+- Visual Studio 2017 (any edition)
+- Relatively recent version of Windows 10 SDK
+
+#### How to build
+
+Visual Studio solution is available at ```projects/msvc2017/PBR.sln```. After successful build the resulting executable
+and all needed DLLs can be found in ```data``` directory. Note that precompiled third party libraries are only available
+for x64 target.
+
+### Linux
+
+Coming soon.
+
+## Running
+
+Make sure to run from within ```data``` directory as all paths are relative to it. API to be used can be specified on the command line
+as a single parameter (```-opengl```, ```-d3d11```, or ```-d3d12```). When run with no parameters ```-opengl``` is used.
+
+### Controls
+
+Input        | Action
+-------------|-------
+LMB drag     | Rotate camera
+RMB drag     | Rotate 3D model
+Scroll wheel | Zoom in/out
+F1-F3        | Toggle analytical lights on/off
 
 ## Bibliography
 
