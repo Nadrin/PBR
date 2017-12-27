@@ -12,6 +12,23 @@ Vulkan      |      | In progress
 Direct3D 11 | 694  | Done
 Direct3D 12 | 1240 | Done
 
+## About
+
+The goal of this project is to showcase the use of various modern graphics APIs and to provide a clear side-by-side comparison of them.
+I believe that an implementation of physically based shading is a sufficiently non-trivial use case for that comparison to be useful.
+
+Each implementation is completely self contained within a single source/header pair residing directly in ```src``` directory.
+The coding style is mostly procedural ("C with classes") using simple POD structs for grouping related data together.
+This was done for simplicity, readability, and to not impose any particular renderer design/organization.
+
+Shared functionality (loading of images & 3D models, application event loop & entry point, misc utility functions)
+can be found in ```src/common``` directory.
+
+Please note that it was not my goal to try to come up with the most efficient/optimized use of each API. The rendered scene is very simple anyway
+(only handful of drawcalls, mostly static data), and when in doubt I tried to refrain from using "clever" tricks and went for simple solutions.
+
+Shaders are heavily commented because there's where interesting stuff happens. :)
+
 ## Building
 
 ### Windows
