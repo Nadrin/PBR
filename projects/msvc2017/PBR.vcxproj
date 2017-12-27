@@ -15,11 +15,11 @@
     <ClCompile Include="..\..\lib\stb\src\libstb.c" />
     <ClCompile Include="..\..\src\common\application.cpp" />
     <ClCompile Include="..\..\src\common\image.cpp" />
+    <ClCompile Include="..\..\src\common\main.cpp" />
     <ClCompile Include="..\..\src\common\mesh.cpp" />
     <ClCompile Include="..\..\src\common\utils.cpp" />
     <ClCompile Include="..\..\src\d3d11.cpp" />
     <ClCompile Include="..\..\src\d3d12.cpp" />
-    <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
   </ItemGroup>
   <ItemGroup>

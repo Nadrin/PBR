@@ -7,12 +7,12 @@
 #include <cstring>
 #include <memory>
 
-#include "common/application.hpp"
-#include "opengl.hpp"
+#include "application.hpp"
 
+#include "../opengl.hpp"
 #if _WIN32
-#include "d3d11.hpp"
-#include "d3d12.hpp"
+#include "../d3d11.hpp"
+#include "../d3d12.hpp"
 #endif // _WIN32
 
 int main(int argc, char* argv[])
