@@ -3,7 +3,7 @@
 
 An implementation of physically based shading model & image based lighting in various graphics APIs.
 
-![Screenshot](https://media.githubusercontent.com/media/Nadrin/PBR/master/data/screenshot.jpg)
+![Screenshot](https://raw.githubusercontent.com/Nadrin/PBR/master/data/screenshot.jpg)
 
 API         | SLOC | Implementation status
 ------------|------|----------------------
