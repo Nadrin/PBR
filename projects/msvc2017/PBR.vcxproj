@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\lib\glad\src\glad.c" />
     <ClCompile Include="..\..\lib\stb\src\libstb.c" />
+    <ClCompile Include="..\..\lib\volk\src\volk.c" />
     <ClCompile Include="..\..\src\common\application.cpp" />
     <ClCompile Include="..\..\src\common\image.cpp" />
     <ClCompile Include="..\..\src\common\main.cpp" />
@@ -21,6 +22,7 @@
     <ClCompile Include="..\..\src\d3d11.cpp" />
     <ClCompile Include="..\..\src\d3d12.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
+    <ClCompile Include="..\..\src\vulkan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\common\application.hpp" />
@@ -31,6 +33,7 @@
     <ClInclude Include="..\..\src\d3d11.hpp" />
     <ClInclude Include="..\..\src\d3d12.hpp" />
     <ClInclude Include="..\..\src\opengl.hpp" />
+    <ClInclude Include="..\..\src\vulkan.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\data\shaders\glsl\equirect2cube_cs.glsl" />
@@ -103,7 +106,7 @@
     <ProjectGuid>{7F6DC88B-FFAA-4C17-BAAC-DFEA91BAA2D3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PBR</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -144,7 +147,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;GLFW_INCLUDE_NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;$(ProjectDir)\..\..\lib\volk\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -170,7 +173,7 @@ copy /y %ROOTDIR%\lib\glfw\win64\glfw3.dll %ROOTDIR%\data
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;GLFW_INCLUDE_NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;$(ProjectDir)\..\..\lib\volk\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

@@ -38,6 +38,7 @@ Shaders are heavily commented because there's where interesting stuff happens. :
 - Windows 10 or Windows Server 2016 (x64 versions)
 - Visual Studio 2017 (any edition)
 - Relatively recent version of Windows 10 SDK
+- [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
 
 #### How to build
 

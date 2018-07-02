@@ -51,6 +51,12 @@
     <ClCompile Include="..\..\src\common\main.cpp">
       <Filter>src\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\vulkan.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lib\volk\src\volk.c">
+      <Filter>src\lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\opengl.hpp">
@@ -75,6 +81,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\d3d12.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\vulkan.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
