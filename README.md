@@ -94,6 +94,7 @@ This project makes use of the following open source libraries:
 - [GLM](https://glm.g-truc.net/)
 - [D3D12 Helper Library](https://github.com/Microsoft/DirectX-Graphics-Samples/tree/master/Libraries/D3DX12)
 - [glad](https://github.com/Dav1dde/glad) (used to generate OpenGL function loader)
+- [volk](https://github.com/zeux/volk) (meta loader for Vulkan API)
 
 ## Included assets
 
