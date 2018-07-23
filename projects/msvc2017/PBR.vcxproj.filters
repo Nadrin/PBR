@@ -91,33 +91,6 @@
     <None Include="..\..\data\shaders\glsl\passthrough_vs.glsl">
       <Filter>shaders\glsl</Filter>
     </None>
-    <None Include="..\..\data\shaders\glsl\pbr_fs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\pbr_vs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\skybox_fs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\skybox_vs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\tonemap_fs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\irmap_cs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\equirect2cube_cs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\spmap_cs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
-    <None Include="..\..\data\shaders\glsl\spbrdf_cs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
     <None Include="..\..\README.md" />
     <None Include="..\..\data\shaders\hlsl\pbr.hlsl">
       <Filter>shaders\hlsl</Filter>
@@ -152,5 +125,37 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\COPYING.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\data\shaders\glsl\tonemap_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\skybox_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\skybox_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\equirect2cube_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\spmap_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\irmap_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\spbrdf_cs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\pbr_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\pbr_fs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\data\shaders\glsl\tonemap_vs.glsl">
+      <Filter>shaders\glsl</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

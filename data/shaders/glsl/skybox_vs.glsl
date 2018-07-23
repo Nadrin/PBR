@@ -1,9 +1,13 @@
-#version 430
+#version 450 core
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Environment skybox: Vertex program.
+#if VULKAN
+layout(set=0, binding=0) uniform TransformUniforms
+#else
 layout(std140, binding=0) uniform TransformUniforms
+#endif // VULKAN
 {
 	mat4 viewProjectionMatrix;
 	mat4 skyProjectionMatrix;
@@ -11,8 +15,7 @@ layout(std140, binding=0) uniform TransformUniforms
 };
 
 layout(location=0) in vec3 position;
-
-out vec3 localPosition;
+layout(location=0) out vec3 localPosition;
 
 void main()
 {

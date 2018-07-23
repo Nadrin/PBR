@@ -16,6 +16,10 @@
 std::string File::readText(const std::string& filename)
 {
 	std::ifstream file{filename};
+	if(!file.is_open()) {
+		throw std::runtime_error("Could not open file: " + filename);
+	}
+
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	return buffer.str();
@@ -24,6 +28,10 @@ std::string File::readText(const std::string& filename)
 std::vector<char> File::readBinary(const std::string& filename)
 {
 	std::ifstream file{filename, std::ios::binary | std::ios::ate};
+	if(!file.is_open()) {
+		throw std::runtime_error("Could not open file: " + filename);
+	}
+
 	std::streamsize size = file.tellg();
 	file.seekg(0, std::ios::beg);
 

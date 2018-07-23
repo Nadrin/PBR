@@ -1,6 +1,6 @@
-#version 430
+#version 450 core
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Physically Based shading model: Lambetrtian diffuse BRDF + Cook-Torrance microfacet specular BRDF + IBL for ambient.
 
@@ -15,24 +15,39 @@ const int NumLights = 3;
 // Constant normal incidence Fresnel factor for all dielectrics.
 const vec3 Fdielectric = vec3(0.04);
 
-in Vertex
+struct AnalyticalLight {
+	vec3 direction;
+	vec3 radiance;
+};
+
+layout(location=0) in Vertex
 {
 	vec3 position;
 	vec2 texcoord;
 	mat3 tangentBasis;
 } vin;
 
-out vec4 color;
+layout(location=0) out vec4 color;
 
+#if VULKAN
+layout(set=0, binding=1) uniform ShadingUniforms
+#else
 layout(std140, binding=1) uniform ShadingUniforms
+#endif // VULKAN
 {
-	struct {
-		vec3 direction;
-		vec3 radiance;
-	} lights[NumLights];
+	AnalyticalLight lights[NumLights];
 	vec3 eyePosition;
 };
 
+#if VULKAN
+layout(set=1, binding=0) uniform sampler2D albedoTexture;
+layout(set=1, binding=1) uniform sampler2D normalTexture;
+layout(set=1, binding=2) uniform sampler2D metalnessTexture;
+layout(set=1, binding=3) uniform sampler2D roughnessTexture;
+layout(set=1, binding=4) uniform samplerCube specularTexture;
+layout(set=1, binding=5) uniform samplerCube irradianceTexture;
+layout(set=1, binding=6) uniform sampler2D specularBRDF_LUT;
+#else
 layout(binding=0) uniform sampler2D albedoTexture;
 layout(binding=1) uniform sampler2D normalTexture;
 layout(binding=2) uniform sampler2D metalnessTexture;
@@ -40,6 +55,7 @@ layout(binding=3) uniform sampler2D roughnessTexture;
 layout(binding=4) uniform samplerCube specularTexture;
 layout(binding=5) uniform samplerCube irradianceTexture;
 layout(binding=6) uniform sampler2D specularBRDF_LUT;
+#endif // VULKAN
 
 // GGX/Towbridge-Reitz normal distribution function.
 // Uses Disney's reparametrization of alpha = roughness^2.

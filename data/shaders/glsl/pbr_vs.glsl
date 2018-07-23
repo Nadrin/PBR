@@ -1,6 +1,6 @@
-#version 430
+#version 450 core
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Physically Based shading model: Vertex program.
 
@@ -10,14 +10,18 @@ layout(location=2) in vec3 tangent;
 layout(location=3) in vec3 bitangent;
 layout(location=4) in vec2 texcoord;
 
+#if VULKAN
+layout(set=0, binding=0) uniform TransformUniforms
+#else
 layout(std140, binding=0) uniform TransformUniforms
+#endif // VULKAN
 {
 	mat4 viewProjectionMatrix;
 	mat4 skyProjectionMatrix;
 	mat4 sceneRotationMatrix;
 };
 
-out Vertex
+layout(location=0) out Vertex
 {
 	vec3 position;
 	vec2 texcoord;

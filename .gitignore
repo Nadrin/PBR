@@ -4,3 +4,4 @@ Debug/
 Release/
 data/*.exe
 data/*.dll
+data/shaders/spirv/

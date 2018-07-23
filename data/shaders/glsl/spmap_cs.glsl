@@ -1,6 +1,6 @@
-#version 430
+#version 450 core
 // Physically Based Rendering
-// Copyright (c) 2017 Micha³ Siejak
+// Copyright (c) 2017-2018 MichaÅ‚ Siejak
 
 // Pre-filters environment cube map using GGX NDF importance sampling.
 // Part of specular IBL split-sum approximation.
@@ -12,11 +12,36 @@ const float Epsilon = 0.00001;
 const uint NumSamples = 1024;
 const float InvNumSamples = 1.0 / float(NumSamples);
 
+// In Vulkan whole mip tail is bound to the descriptor set and appropriate mip level is selected via a push constant.
+#if VULKAN
+layout(constant_id=0) const int NumMipLevels = 1;
+layout(set=0, binding=0) uniform samplerCube inputTexture;
+layout(set=0, binding=2, rgba16f) restrict writeonly uniform imageCube outputTexture[NumMipLevels];
+#else
+// In OpenGL only a single mip level is bound.
+const int NumMipLevels = 1;
 layout(binding=0) uniform samplerCube inputTexture;
-layout(binding=0, rgba16f) restrict writeonly uniform imageCube outputTexture;
+layout(binding=0, rgba16f) restrict writeonly uniform imageCube outputTexture[NumMipLevels];
+#endif // VULKAN
 
+#if VULKAN
+layout(push_constant) uniform PushConstants
+{
+	// Output texture mip level (without base mip level).
+	int level;
+	// Roughness value to pre-filter for.
+	float roughness;
+} pushConstants;
+
+#define PARAM_LEVEL     pushConstants.level
+#define PARAM_ROUGHNESS pushConstants.roughness
+#else
 // Roughness value to pre-filter for.
 layout(location=0) uniform float roughness;
+
+#define PARAM_LEVEL     0
+#define PARAM_ROUGHNESS roughness
+#endif // VULKAN
 
 // Compute Van der Corput radical inverse
 // See: http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
@@ -68,7 +93,7 @@ float ndfGGX(float cosLh, float roughness)
 // See: OpenGL core profile specs, section 8.13.
 vec3 getSamplingVector()
 {
-    vec2 st = gl_GlobalInvocationID.xy/vec2(imageSize(outputTexture));
+    vec2 st = gl_GlobalInvocationID.xy/vec2(imageSize(outputTexture[PARAM_LEVEL]));
     vec2 uv = 2.0 * vec2(st.x, 1.0-st.y) - vec2(1.0);
 
     vec3 ret;
@@ -103,7 +128,7 @@ layout(local_size_x=32, local_size_y=32, local_size_z=1) in;
 void main(void)
 {
 	// Make sure we won't write past output when computing higher mipmap levels.
-	ivec2 outputSize = imageSize(outputTexture);
+	ivec2 outputSize = imageSize(outputTexture[PARAM_LEVEL]);
 	if(gl_GlobalInvocationID.x >= outputSize.x || gl_GlobalInvocationID.y >= outputSize.y) {
 		return;
 	}
@@ -127,7 +152,7 @@ void main(void)
 	// Weight by cosine term since Epic claims it generally improves quality.
 	for(uint i=0; i<NumSamples; ++i) {
 		vec2 u = sampleHammersley(i);
-		vec3 Lh = tangentToWorld(sampleGGX(u.x, u.y, roughness), N, S, T);
+		vec3 Lh = tangentToWorld(sampleGGX(u.x, u.y, PARAM_ROUGHNESS), N, S, T);
 
 		// Compute incident direction (Li) by reflecting viewing direction (Lo) around half-vector (Lh).
 		vec3 Li = 2.0 * dot(Lo, Lh) * Lh - Lo;
@@ -141,7 +166,7 @@ void main(void)
 
 			// GGX normal distribution function (D term) probability density function.
 			// Scaling by 1/4 is due to change of density in terms of Lh to Li (and since N=V, rest of the scaling factor cancels out).
-			float pdf = ndfGGX(cosLh, roughness) * 0.25;
+			float pdf = ndfGGX(cosLh, PARAM_ROUGHNESS) * 0.25;
 
 			// Solid angle associated with this sample.
 			float ws = 1.0 / (NumSamples * pdf);
@@ -155,5 +180,5 @@ void main(void)
 	}
 	color /= weight;
 
-	imageStore(outputTexture, ivec3(gl_GlobalInvocationID), vec4(color, 1.0));
+	imageStore(outputTexture[PARAM_LEVEL], ivec3(gl_GlobalInvocationID), vec4(color, 1.0));
 }

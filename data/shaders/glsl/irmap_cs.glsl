@@ -1,6 +1,6 @@
-#version 430
+#version 450 core
 // Physically Based Rendering
-// Copyright (c) 2017 Micha≥ Siejak
+// Copyright (c) 2017-2018 Micha≈Ç Siejak
 
 // Computes diffuse irradiance cubemap convolution for image-based lighting.
 // Uses quasi Monte Carlo sampling with Hammersley sequence.
@@ -12,8 +12,13 @@ const float Epsilon = 0.00001;
 const uint NumSamples = 64 * 1024;
 const float InvNumSamples = 1.0 / float(NumSamples);
 
+#if VULKAN
+layout(set=0, binding=0) uniform samplerCube inputTexture;
+layout(set=0, binding=1, rgba16f) restrict writeonly uniform imageCube outputTexture;
+#else
 layout(binding=0) uniform samplerCube inputTexture;
 layout(binding=0, rgba16f) restrict writeonly uniform imageCube outputTexture;
+#endif // VULKAN
 
 // Compute Van der Corput radical inverse
 // See: http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
