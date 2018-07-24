@@ -48,16 +48,6 @@ struct SpecularFilterPushConstants
 	float roughness;
 };
 
-// Return preferredValue if it's supported, otherwise return first supported value.
-template<typename T> T selectSupportedValue(T preferredValue, const std::vector<typename T>& supportedValues)
-{
-	assert(supportedValues.size() > 0);
-	if(std::find(supportedValues.begin(), supportedValues.end(), preferredValue) != supportedValues.end()) {
-		return preferredValue;
-	}
-	return supportedValues[0];
-}
-
 GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 {
 	if(VKFAILED(volkInitialize())) {
@@ -157,9 +147,17 @@ GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 
 	// Create swap chain
 	{
+		uint32_t selectedMinImageCount = 2;
+		selectedMinImageCount = glm::clamp(selectedMinImageCount, m_phyDevice.surfaceCaps.minImageCount, m_phyDevice.surfaceCaps.maxImageCount);
+
+		VkPresentModeKHR selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+		if(std::find(m_phyDevice.presentModes.begin(), m_phyDevice.presentModes.end(), selectedPresentMode) == m_phyDevice.presentModes.end()) {
+			selectedPresentMode = m_phyDevice.presentModes[0];
+		}
+
 		VkSwapchainCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
 		createInfo.surface = m_surface;
-		createInfo.minImageCount = glm::clamp<uint32_t>(3, m_phyDevice.surfaceCaps.minImageCount, m_phyDevice.surfaceCaps.maxImageCount);
+		createInfo.minImageCount = selectedMinImageCount;
 		createInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
 		createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 		createInfo.imageExtent = m_phyDevice.surfaceCaps.currentExtent;
@@ -168,7 +166,7 @@ GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.preTransform = m_phyDevice.surfaceCaps.currentTransform;
 		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		createInfo.presentMode = selectSupportedValue(VK_PRESENT_MODE_FIFO_KHR, m_phyDevice.presentModes);
+		createInfo.presentMode = selectedPresentMode;
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 		if(VKFAILED(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain))) {
