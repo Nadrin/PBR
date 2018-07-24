@@ -115,6 +115,11 @@ void Renderer::shutdown()
 
 void Renderer::setup()
 {
+	// Parameters
+	static constexpr int kEnvMapSize = 1024;
+	static constexpr int kIrradianceMapSize = 32;
+	static constexpr int kBRDF_LUT_Size = 256;
+
 	// Set global OpenGL state.
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -151,7 +156,7 @@ void Renderer::setup()
 	m_roughnessTexture = createTexture(Image::fromFile("textures/cerberus_R.png", 1), GL_RED, GL_R8);
 	
 	// Unfiltered environment cube map (temporary).
-	Texture envTextureUnfiltered = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+	Texture envTextureUnfiltered = createTexture(GL_TEXTURE_CUBE_MAP, kEnvMapSize, kEnvMapSize, GL_RGBA16F);
 	
 	// Load & convert equirectangular environment map to a cubemap texture.
 	{
@@ -178,7 +183,7 @@ void Renderer::setup()
 			compileShader("shaders/glsl/spmap_cs.glsl", GL_COMPUTE_SHADER)
 		});
 
-		m_envTexture = createTexture(GL_TEXTURE_CUBE_MAP, 1024, 1024, GL_RGBA16F);
+		m_envTexture = createTexture(GL_TEXTURE_CUBE_MAP, kEnvMapSize, kEnvMapSize, GL_RGBA16F);
 
 		// Copy 0th mipmap level into destination environment map.
 		glCopyImageSubData(envTextureUnfiltered.id, GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
@@ -190,7 +195,7 @@ void Renderer::setup()
 
 		// Pre-filter rest of the mip chain.
 		const float deltaRoughness = 1.0f / glm::max(float(m_envTexture.levels-1), 1.0f);
-		for(int level=1, size=512; level<=m_envTexture.levels; ++level, size/=2) {
+		for(int level=1, size=kEnvMapSize/2; level<=m_envTexture.levels; ++level, size/=2) {
 			const GLuint numGroups = glm::max(1, size/32);
 			glBindImageTexture(0, m_envTexture.id, level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			glProgramUniform1f(spmapProgram, 0, level * deltaRoughness);
@@ -207,7 +212,7 @@ void Renderer::setup()
 			compileShader("shaders/glsl/irmap_cs.glsl", GL_COMPUTE_SHADER)
 		});
 
-		m_irmapTexture = createTexture(GL_TEXTURE_CUBE_MAP, 32, 32, GL_RGBA16F, 1);
+		m_irmapTexture = createTexture(GL_TEXTURE_CUBE_MAP, kIrradianceMapSize, kIrradianceMapSize, GL_RGBA16F, 1);
 
 		glUseProgram(irmapProgram);
 		glBindTextureUnit(0, m_envTexture.id);
@@ -222,7 +227,7 @@ void Renderer::setup()
 			compileShader("shaders/glsl/spbrdf_cs.glsl", GL_COMPUTE_SHADER)
 		});
 
-		m_spBRDF_LUT = createTexture(GL_TEXTURE_2D, 256, 256, GL_RG16F, 1);
+		m_spBRDF_LUT = createTexture(GL_TEXTURE_2D, kBRDF_LUT_Size, kBRDF_LUT_Size, GL_RG16F, 1);
 		glTextureParameteri(m_spBRDF_LUT.id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(m_spBRDF_LUT.id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
