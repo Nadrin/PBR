@@ -60,8 +60,6 @@ private:
 	static MeshBuffer createMeshBuffer(const std::shared_ptr<class Mesh>& mesh);
 	static void deleteMeshBuffer(MeshBuffer& buffer);
 
-	static MeshBuffer createClipSpaceQuad();
-
 	static GLuint createUniformBuffer(const void* data, size_t size);
 	template<typename T> GLuint createUniformBuffer(const T* data=nullptr)
 	{
@@ -79,9 +77,10 @@ private:
 	FrameBuffer m_framebuffer;
 	FrameBuffer m_resolveFramebuffer;
 
-	MeshBuffer m_screenQuad;
 	MeshBuffer m_skybox;
 	MeshBuffer m_pbrModel;
+
+	GLuint m_emptyVAO;
 
 	GLuint m_tonemapProgram;
 	GLuint m_skyboxProgram;

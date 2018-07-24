@@ -46,7 +46,6 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe -V -S comp -o $(SolutionDir)..\..\data\shaders\spirv\%(Filename).spv %(FullPath)</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe -V -S comp -o $(SolutionDir)..\..\data\shaders\spirv\%(Filename).spv %(FullPath)</Command>
     </CustomBuild>
-    <None Include="..\..\data\shaders\glsl\passthrough_vs.glsl" />
     <CustomBuild Include="..\..\data\shaders\glsl\pbr_fs.glsl">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator.exe -V -S frag -o $(SolutionDir)..\..\data\shaders\spirv\%(Filename).spv %(FullPath)</Command>

@@ -88,9 +88,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\data\shaders\glsl\passthrough_vs.glsl">
-      <Filter>shaders\glsl</Filter>
-    </None>
     <None Include="..\..\README.md" />
     <None Include="..\..\data\shaders\hlsl\pbr.hlsl">
       <Filter>shaders\hlsl</Filter>

@@ -5,9 +5,12 @@
 
 #include <stdexcept>
 #include <memory>
-#include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
+
+#include <GLFW/glfw3.h>
 
 #include "common/mesh.hpp"
 #include "common/image.hpp"
@@ -88,10 +91,11 @@ void Renderer::shutdown()
 	}
 	deleteFrameBuffer(m_framebuffer);
 
+	glDeleteVertexArrays(1, &m_emptyVAO);
+
 	glDeleteBuffers(1, &m_transformUB);
 	glDeleteBuffers(1, &m_shadingUB);
 
-	deleteMeshBuffer(m_screenQuad);
 	deleteMeshBuffer(m_skybox);
 	deleteMeshBuffer(m_pbrModel);
 	
@@ -116,14 +120,16 @@ void Renderer::setup()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glFrontFace(GL_CCW);
 
+	// Create empty VAO for rendering full screen triangle.
+	glCreateVertexArrays(1, &m_emptyVAO);
+
 	// Create uniform buffers.
 	m_transformUB = createUniformBuffer<TransformUB>();
 	m_shadingUB = createUniformBuffer<ShadingUB>();
 
 	// Load assets & compile/link rendering programs.
-	m_screenQuad = createClipSpaceQuad();
 	m_tonemapProgram = linkProgram({
-		compileShader("shaders/glsl/passthrough_vs.glsl", GL_VERTEX_SHADER),
+		compileShader("shaders/glsl/tonemap_vs.glsl", GL_VERTEX_SHADER),
 		compileShader("shaders/glsl/tonemap_fs.glsl", GL_FRAGMENT_SHADER)
 	});
 
@@ -298,8 +304,8 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(m_tonemapProgram);
 	glBindTextureUnit(0, m_resolveFramebuffer.colorTarget);
-	glBindVertexArray(m_screenQuad.vao);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(m_emptyVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glfwSwapBuffers(window);
 }
@@ -509,29 +515,6 @@ void Renderer::deleteMeshBuffer(MeshBuffer& buffer)
 		glDeleteBuffers(1, &buffer.ibo);
 	}
 	std::memset(&buffer, 0, sizeof(MeshBuffer));
-}
-	
-MeshBuffer Renderer::createClipSpaceQuad()
-{
-	static const GLfloat vertices[] = {
-		 1.0f,  1.0f, 1.0f, 1.0f,
-	    -1.0f,  1.0f, 0.0f, 1.0f,
-		 1.0f, -1.0f, 1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f, 0.0f,
-	};
-
-	MeshBuffer buffer;
-	glCreateBuffers(1, &buffer.vbo);
-	glNamedBufferStorage(buffer.vbo, sizeof(vertices), vertices, 0);
-
-	glCreateVertexArrays(1, &buffer.vao);
-	for(int i=0; i<2; ++i) {
-		glVertexArrayVertexBuffer(buffer.vao, i, buffer.vbo, i * 2 * sizeof(GLfloat), 4 * sizeof(GLfloat));
-		glEnableVertexArrayAttrib(buffer.vao, i);
-		glVertexArrayAttribFormat(buffer.vao, i, 2, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribBinding(buffer.vao, i, i);
-	}
-	return buffer;
 }
 	
 GLuint Renderer::createUniformBuffer(const void* data, size_t size)
