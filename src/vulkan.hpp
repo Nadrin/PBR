@@ -59,11 +59,11 @@ struct Texture
 struct RenderTarget
 {
 	Resource<VkImage> colorImage;
-	Resource<VkImage> depthStencilImage;
+	Resource<VkImage> depthImage;
 	VkImageView colorView;
-	VkImageView depthStencilView;
+	VkImageView depthView;
 	VkFormat colorFormat;
-	VkFormat depthStencilFormat;
+	VkFormat depthFormat;
 	uint32_t width, height;
 	uint32_t samples;
 };
@@ -147,7 +147,7 @@ private:
 	void generateMipmaps(const Texture& texture) const;
 	void destroyTexture(Texture& texture) const;
 
-	RenderTarget createRenderTarget(uint32_t width, uint32_t height, uint32_t samples, VkFormat colorFormat, VkFormat depthStencilFormat) const;
+	RenderTarget createRenderTarget(uint32_t width, uint32_t height, uint32_t samples, VkFormat colorFormat, VkFormat depthFormat) const;
 	void destroyRenderTarget(RenderTarget& rt) const;
 
 	UniformBuffer createUniformBuffer(VkDeviceSize capacity) const;
@@ -187,6 +187,7 @@ private:
 
 	PhyDevice choosePhyDevice(VkSurfaceKHR surface, const VkPhysicalDeviceFeatures& requiredFeatures, const std::vector<const char*>& requiredExtensions) const;
 	void queryPhyDeviceSurfaceCapabilities(PhyDevice& phyDevice, VkSurfaceKHR surface) const;
+	bool checkPhyDeviceImageFormatsSupport(PhyDevice& phyDevice) const;
 	
 	uint32_t queryRenderTargetFormatMaxSamples(VkFormat format, VkImageUsageFlags usage) const;
 	uint32_t chooseMemoryType(const VkMemoryRequirements& memoryRequirements, VkMemoryPropertyFlags preferredFlags, VkMemoryPropertyFlags requiredFlags=0) const;

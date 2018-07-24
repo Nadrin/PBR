@@ -206,18 +206,18 @@ GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 	// Create render targets
 	{
 		const VkFormat colorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-		const VkFormat depthStencilFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+		const VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
 
 		const uint32_t maxColorSamples = queryRenderTargetFormatMaxSamples(colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-		const uint32_t maxDepthStencilSamples = queryRenderTargetFormatMaxSamples(depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		const uint32_t maxDepthSamples = queryRenderTargetFormatMaxSamples(depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-		m_renderSamples = std::min({uint32_t(maxSamples), maxColorSamples, maxDepthStencilSamples});
+		m_renderSamples = std::min({uint32_t(maxSamples), maxColorSamples, maxDepthSamples});
 		assert(m_renderSamples >= 1);
 
 		m_renderTargets.resize(m_numFrames);
 		m_resolveRenderTargets.resize(m_numFrames);
 		for(uint32_t i=0; i<m_numFrames; ++i) {
-			m_renderTargets[i] = createRenderTarget(width, height, m_renderSamples, colorFormat, depthStencilFormat);
+			m_renderTargets[i] = createRenderTarget(width, height, m_renderSamples, colorFormat, depthFormat);
 			if(m_renderSamples > 1) {
 				m_resolveRenderTargets[i] = createRenderTarget(width, height, 1, colorFormat, VK_FORMAT_UNDEFINED);
 			}
@@ -500,7 +500,7 @@ void Renderer::setup()
 			// Main depth-stencil attachment (1)
 			{
 				0,
-				m_renderTargets[0].depthStencilFormat,
+				m_renderTargets[0].depthFormat,
 				static_cast<VkSampleCountFlagBits>(m_renderSamples),
 				VK_ATTACHMENT_LOAD_OP_CLEAR,
 				VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -617,7 +617,7 @@ void Renderer::setup()
 
 			std::vector<VkImageView> attachments = {
 				m_renderTargets[i].colorView,
-				m_renderTargets[i].depthStencilView,
+				m_renderTargets[i].depthView,
 				m_swapchainViews[i],
 			};
 			if(m_renderSamples > 1) {
@@ -1383,7 +1383,7 @@ void Renderer::destroyTexture(Texture& texture) const
 	destroyImage(texture.image);
 }
 	
-RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint32_t samples, VkFormat colorFormat, VkFormat depthStencilFormat) const
+RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint32_t samples, VkFormat colorFormat, VkFormat depthFormat) const
 {
 	assert(samples > 0 && samples <= 64);
 	
@@ -1392,7 +1392,7 @@ RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint3
 	target.height = height;
 	target.samples = samples;
 	target.colorFormat = colorFormat;
-	target.depthStencilFormat = depthStencilFormat;
+	target.depthFormat = depthFormat;
 
 	VkImageUsageFlags colorImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	if(samples == 1) {
@@ -1402,8 +1402,8 @@ RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint3
 	if(colorFormat != VK_FORMAT_UNDEFINED) {
 		target.colorImage = createImage(width, height, 1, 1, colorFormat, samples, colorImageUsage);
 	}
-	if(depthStencilFormat != VK_FORMAT_UNDEFINED) {
-		target.depthStencilImage = createImage(width, height, 1, 1, depthStencilFormat, samples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	if(depthFormat != VK_FORMAT_UNDEFINED) {
+		target.depthImage = createImage(width, height, 1, 1, depthFormat, samples, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
 	VkImageViewCreateInfo viewCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -1420,11 +1420,11 @@ RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint3
 		}
 	}
 
-	if(target.depthStencilImage.resource != VK_NULL_HANDLE) {
-		viewCreateInfo.image = target.depthStencilImage.resource;
-		viewCreateInfo.format = depthStencilFormat;
-		viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-		if(VKFAILED(vkCreateImageView(m_device, &viewCreateInfo, nullptr, &target.depthStencilView))) {
+	if(target.depthImage.resource != VK_NULL_HANDLE) {
+		viewCreateInfo.image = target.depthImage.resource;
+		viewCreateInfo.format = depthFormat;
+		viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		if(VKFAILED(vkCreateImageView(m_device, &viewCreateInfo, nullptr, &target.depthView))) {
 			throw std::runtime_error("Failed to create render target depth-stencil image view");
 		}
 	}
@@ -1435,13 +1435,13 @@ RenderTarget Renderer::createRenderTarget(uint32_t width, uint32_t height, uint3
 void Renderer::destroyRenderTarget(RenderTarget& target) const
 {
 	destroyImage(target.colorImage);
-	destroyImage(target.depthStencilImage);
+	destroyImage(target.depthImage);
 
 	if(target.colorView != VK_NULL_HANDLE) {
 		vkDestroyImageView(m_device, target.colorView, nullptr);
 	}
-	if(target.depthStencilView != VK_NULL_HANDLE) {
-		vkDestroyImageView(m_device, target.depthStencilView, nullptr);
+	if(target.depthView != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_device, target.depthView, nullptr);
 	}
 	target = {};
 }
@@ -1845,6 +1845,11 @@ PhyDevice Renderer::choosePhyDevice(VkSurfaceKHR surface, const VkPhysicalDevice
 			continue;
 		}
 
+		// Check if all required image formats are supported.
+		if(!checkPhyDeviceImageFormatsSupport(phyDevice)) {
+			continue;
+		}
+
 		int rank = 0;
 
 		// Rank discrete GPUs higher.
@@ -1929,6 +1934,39 @@ void Renderer::queryPhyDeviceSurfaceCapabilities(PhyDevice& phyDevice, VkSurface
 	if(!hasPresentModes) {
 		throw std::runtime_error("Failed to retrieve physical device supported present modes");
 	}
+}
+	
+bool Renderer::checkPhyDeviceImageFormatsSupport(PhyDevice& phyDevice) const
+{
+	VkFormatProperties formatProperties;
+	VkImageFormatProperties imageProperties;
+
+	// Only checking non-mandatory format/usage/feature combinations.
+
+	// Check for depth render target format support.
+	if(VKFAILED(vkGetPhysicalDeviceImageFormatProperties(phyDevice.handle,
+		VK_FORMAT_D32_SFLOAT, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0, &imageProperties))) {
+		return false;
+	}
+
+	// Check for BRDF LUT format support.
+	if(VKFAILED(vkGetPhysicalDeviceImageFormatProperties(phyDevice.handle,
+		VK_FORMAT_R16G16_SFLOAT, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, 0, &imageProperties))) {
+		return false;
+	}
+
+	// Check for equirect environment map format support.
+	if(VKFAILED(vkGetPhysicalDeviceImageFormatProperties(phyDevice.handle,
+		VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, 0, &imageProperties))) {
+		return false;
+	}
+	// Check for linear sampling feature.
+	vkGetPhysicalDeviceFormatProperties(phyDevice.handle, VK_FORMAT_R32G32B32A32_SFLOAT, &formatProperties);
+	if(!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+		return false;
+	}
+
+	return true;
 }
 	
 uint32_t Renderer::queryRenderTargetFormatMaxSamples(VkFormat format, VkImageUsageFlags usage) const
