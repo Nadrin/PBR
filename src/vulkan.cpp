@@ -58,28 +58,6 @@ template<typename T> T selectSupportedValue(T preferredValue, const std::vector<
 	return supportedValues[0];
 }
 
-struct ImageMemoryBarrier
-{
-	ImageMemoryBarrier(
-		VkImage image, VkImageAspectFlags aspectMask,
-		VkAccessFlags srcAccessMask=0, VkAccessFlags dstAccessMask=0,
-		VkImageLayout oldLayout=VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout newLayout=VK_IMAGE_LAYOUT_GENERAL)
-	{
-		barrier.srcAccessMask = srcAccessMask;
-		barrier.dstAccessMask = dstAccessMask;
-		barrier.oldLayout = oldLayout;
-		barrier.newLayout = newLayout;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.image = image;
-		barrier.subresourceRange.aspectMask = aspectMask;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	}
-	operator VkImageMemoryBarrier() const { return barrier; }
-	VkImageMemoryBarrier barrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-};
-
 GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 {
 	if(VKFAILED(volkInitialize())) {
@@ -837,25 +815,15 @@ void Renderer::setup()
 
 			VkCommandBuffer commandBuffer = beginImmediateCommandBuffer();
 			{
-				VkImageMemoryBarrier preDispatchBarrier = ImageMemoryBarrier(
-					envTextureUnfiltered.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					0, VK_ACCESS_SHADER_WRITE_BIT,
-					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-				preDispatchBarrier.subresourceRange.levelCount = 1;
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &preDispatchBarrier);
+				const auto preDispatchBarrier = ImageMemoryBarrier(envTextureUnfiltered, 0, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL).mipLevels(0, 1);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, { preDispatchBarrier });
 
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, 1, &computeDescriptorSet, 0, nullptr);
 				vkCmdDispatch(commandBuffer, kEnvMapSize/32, kEnvMapSize/32, 6);
 
-				VkImageMemoryBarrier postDispatchBarrier = ImageMemoryBarrier(
-					envTextureUnfiltered.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					VK_ACCESS_SHADER_WRITE_BIT, 0,
-					VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-				postDispatchBarrier.subresourceRange.levelCount = 1;
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &postDispatchBarrier);
+				const auto postDispatchBarrier = ImageMemoryBarrier(envTextureUnfiltered, VK_ACCESS_SHADER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).mipLevels(0, 1);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { postDispatchBarrier });
 			}
 			executeImmediateCommandBuffer(commandBuffer);
 
@@ -882,31 +850,16 @@ void Renderer::setup()
 
 			// Copy base mipmap level into destination environment map.
 			{
-				VkImageMemoryBarrier preCopyBarriers[] = {
-					ImageMemoryBarrier(
-						envTextureUnfiltered.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-						0, VK_ACCESS_TRANSFER_READ_BIT,
-						VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL),
-					ImageMemoryBarrier(
-						m_envTexture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-						0, VK_ACCESS_TRANSFER_WRITE_BIT,
-						VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+				const std::vector<ImageMemoryBarrier> preCopyBarriers = {
+					ImageMemoryBarrier(envTextureUnfiltered, 0, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).mipLevels(0, 1),
+					ImageMemoryBarrier(m_envTexture, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL),
 				};
-				VkImageMemoryBarrier postCopyBarriers[] = {
-					ImageMemoryBarrier(
-						envTextureUnfiltered.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-						VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
-						VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL),
-					ImageMemoryBarrier(
-						m_envTexture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-						VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT,
-						VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL)
+				const std::vector<ImageMemoryBarrier> postCopyBarriers = {
+					ImageMemoryBarrier(envTextureUnfiltered, VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL).mipLevels(0, 1),
+					ImageMemoryBarrier(m_envTexture, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL),
 				};
-				preCopyBarriers[0].subresourceRange.levelCount = 1;
-				postCopyBarriers[0].subresourceRange.levelCount = 1;
 
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-					0, nullptr, 0, nullptr, 2, preCopyBarriers);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, preCopyBarriers);
 
 				VkImageCopy copyRegion = {};
 				copyRegion.extent = { m_envTexture.width, m_envTexture.height, 1 };
@@ -918,8 +871,7 @@ void Renderer::setup()
 					m_envTexture.image.resource, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 					1, &copyRegion);
 
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-					0, nullptr, 0, nullptr, 2, postCopyBarriers);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, postCopyBarriers);
 			}
 				
 			// Pre-filter rest of the mip-chain.
@@ -947,12 +899,8 @@ void Renderer::setup()
 					vkCmdDispatch(commandBuffer, numGroups, numGroups, 6);
 				}
 
-				VkImageMemoryBarrier barrier = ImageMemoryBarrier(
-					m_envTexture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					VK_ACCESS_SHADER_WRITE_BIT, 0,
-					VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &barrier);
+				const auto barrier = ImageMemoryBarrier(m_envTexture, VK_ACCESS_SHADER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { barrier });
 			}
 
 			executeImmediateCommandBuffer(commandBuffer);
@@ -975,23 +923,15 @@ void Renderer::setup()
 
 			VkCommandBuffer commandBuffer = beginImmediateCommandBuffer();
 			{
-				VkImageMemoryBarrier preDispatchBarrier = ImageMemoryBarrier(
-					m_irmapTexture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					0, VK_ACCESS_SHADER_WRITE_BIT,
-					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &preDispatchBarrier);
+				const auto preDispatchBarrier = ImageMemoryBarrier(m_irmapTexture, 0, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, { preDispatchBarrier });
 
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, 1, &computeDescriptorSet, 0, nullptr);
 				vkCmdDispatch(commandBuffer, kIrradianceMapSize/32, kIrradianceMapSize/32, 6);
 
-				VkImageMemoryBarrier postDispatchBarrier = ImageMemoryBarrier(
-					m_irmapTexture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					VK_ACCESS_SHADER_WRITE_BIT, 0,
-					VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &postDispatchBarrier);
+				const auto postDispatchBarrier = ImageMemoryBarrier(m_irmapTexture, VK_ACCESS_SHADER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { postDispatchBarrier });
 			}
 			executeImmediateCommandBuffer(commandBuffer);
 			vkDestroyPipeline(m_device, pipeline, nullptr);
@@ -1006,23 +946,15 @@ void Renderer::setup()
 
 			VkCommandBuffer commandBuffer = beginImmediateCommandBuffer();
 			{
-				VkImageMemoryBarrier preDispatchBarrier = ImageMemoryBarrier(
-					m_spBRDF_LUT.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					0, VK_ACCESS_SHADER_WRITE_BIT,
-					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &preDispatchBarrier);
+				const auto preDispatchBarrier = ImageMemoryBarrier(m_spBRDF_LUT, 0, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, { preDispatchBarrier });
 
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 0, 1, &computeDescriptorSet, 0, nullptr);
 				vkCmdDispatch(commandBuffer, kBRDF_LUT_Size/32, kBRDF_LUT_Size/32, 6);
 
-				VkImageMemoryBarrier postDispatchBarrier = ImageMemoryBarrier(
-					m_spBRDF_LUT.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-					VK_ACCESS_SHADER_WRITE_BIT, 0,
-					VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-				vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-					0, nullptr, 0, nullptr, 1, &postDispatchBarrier);
+				const auto postDispatchBarrier = ImageMemoryBarrier(m_spBRDF_LUT, VK_ACCESS_SHADER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+				pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { postDispatchBarrier });
 			}
 			executeImmediateCommandBuffer(commandBuffer);
 			vkDestroyPipeline(m_device, pipeline, nullptr);
@@ -1357,14 +1289,8 @@ Texture Renderer::createTexture(const std::shared_ptr<Image>& image, VkFormat fo
 
 	VkCommandBuffer commandBuffer = beginImmediateCommandBuffer();
 	{
-		VkImageMemoryBarrier barrier = ImageMemoryBarrier(
-			texture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		barrier.subresourceRange.levelCount = 1;
-
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			0, nullptr, 0, nullptr, 1, &barrier);
+		const auto barrier = ImageMemoryBarrier(texture, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).mipLevels(0, 1);
+		pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, { barrier });
 	}
 
 	VkBufferImageCopy copyRegion = {};
@@ -1381,14 +1307,8 @@ Texture Renderer::createTexture(const std::shared_ptr<Image>& image, VkFormat fo
 			? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 			: VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-		VkImageMemoryBarrier barrier = ImageMemoryBarrier(
-			texture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_ACCESS_TRANSFER_WRITE_BIT, 0,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, finalBaseMipLayout);
-		barrier.subresourceRange.levelCount = 1;
-
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-			0, nullptr, 0, nullptr, 1, &barrier);
+		const auto barrier = ImageMemoryBarrier(texture, VK_ACCESS_TRANSFER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, finalBaseMipLayout).mipLevels(0, 1);
+		pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { barrier });
 	}
 
 	executeImmediateCommandBuffer(commandBuffer);
@@ -1429,14 +1349,8 @@ void Renderer::generateMipmaps(const Texture& texture) const
 	// Iterate through mip chain and consecutively blit from previous level to next level with linear filtering.
 	for(uint32_t level=1, prevLevelWidth=texture.width, prevLevelHeight=texture.height; level<texture.levels; ++level, prevLevelWidth/=2, prevLevelHeight/=2) {
 
-		VkImageMemoryBarrier preBlitBarrier = ImageMemoryBarrier(
-			texture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		preBlitBarrier.subresourceRange.baseMipLevel = level;
-		preBlitBarrier.subresourceRange.levelCount   = 1;
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			0, nullptr, 0, nullptr, 1, &preBlitBarrier);
+		const auto preBlitBarrier = ImageMemoryBarrier(texture, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).mipLevels(level, 1);
+		pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, { preBlitBarrier });
 
 		VkImageBlit region = {};
 		region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, level-1, 0, texture.layers };
@@ -1448,25 +1362,14 @@ void Renderer::generateMipmaps(const Texture& texture) const
 			texture.image.resource, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			1, &region, VK_FILTER_LINEAR);
 
-		VkImageMemoryBarrier postBlitBarrier = ImageMemoryBarrier(
-			texture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-		postBlitBarrier.subresourceRange.baseMipLevel = level;
-		postBlitBarrier.subresourceRange.levelCount   = 1;
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-			0, nullptr, 0, nullptr, 1, &postBlitBarrier);
+		const auto postBlitBarrier = ImageMemoryBarrier(texture, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).mipLevels(level, 1);
+		pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, { postBlitBarrier });
 	}
 
 	// Transition whole mip chain to shader read only layout.
 	{
-		VkImageMemoryBarrier barrier = ImageMemoryBarrier(
-			texture.image.resource, VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_ACCESS_TRANSFER_WRITE_BIT, 0,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-			0, nullptr, 0, nullptr, 1, &barrier);
+		const auto barrier = ImageMemoryBarrier(texture, VK_ACCESS_TRANSFER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		pipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, { barrier });
 	}
 
 	executeImmediateCommandBuffer(commandBuffer);
@@ -1834,6 +1737,11 @@ void Renderer::copyToDevice(VkDeviceMemory deviceMemory, const void* data, size_
 	std::memcpy(mappedMemory, data, size);
 	vkFlushMappedMemoryRanges(m_device, 1, &flushRange);
 	vkUnmapMemory(m_device, deviceMemory);
+}
+	
+void Renderer::pipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, const std::vector<ImageMemoryBarrier>& barriers) const
+{
+	vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, (uint32_t)barriers.size(), reinterpret_cast<const VkImageMemoryBarrier*>(barriers.data()));
 }
 
 void Renderer::presentFrame()
