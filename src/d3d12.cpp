@@ -1,9 +1,14 @@
 /*
  * Physically Based Rendering
- * Copyright (c) 2017 Michał Siejak
+ * Copyright (c) 2017-2018 Michał Siejak
+ *
+ * Direct3D 12 renderer.
  */
 
+#include <algorithm>
 #include <stdexcept>
+
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
@@ -425,9 +430,9 @@ void Renderer::setup()
 				m_commandList->SetComputeRootSignature(computeRootSignature.Get());
 				m_commandList->SetComputeRootDescriptorTable(0, envTextureUnfiltered.srv.gpuHandle);
 
-				const float deltaRoughness = 1.0f / glm::max(float(m_envTexture.levels-1), 1.0f);
+				const float deltaRoughness = 1.0f / std::max(float(m_envTexture.levels-1), 1.0f);
 				for(UINT level=1, size=512; level<m_envTexture.levels; ++level, size/=2) {
-					const UINT numGroups = glm::max<UINT>(1, size/32);
+					const UINT numGroups = std::max<UINT>(1, size/32);
 					const float spmapRoughness = level * deltaRoughness;
 
 					createTextureUAV(m_envTexture, level);

@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Computes diffuse irradiance cubemap convolution for image-based lighting.
 // Uses quasi Monte Carlo sampling with Hammersley sequence.

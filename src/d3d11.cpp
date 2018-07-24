@@ -1,9 +1,13 @@
 /*
  * Physically Based Rendering
- * Copyright (c) 2017 Michał Siejak
+ * Copyright (c) 2017-2018 Michał Siejak
+ *
+ * Direct3D 11 renderer.
  */
 
 #include <stdexcept>
+
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtc/type_ptr.hpp>

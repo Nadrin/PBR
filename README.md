@@ -1,5 +1,5 @@
 # Physically Based Rendering
-(c) 2017 Michał Siejak
+(c) 2017 -- 2018 Michał Siejak
 
 An implementation of physically based shading model & image based lighting in various graphics APIs.
 
@@ -7,8 +7,8 @@ An implementation of physically based shading model & image based lighting in va
 
 API         | SLOC | Implementation status
 ------------|------|----------------------
-OpenGL 4.5  | 521  | Done
-Vulkan      |      | In progress
+OpenGL 4.5  | 504  | Done
+Vulkan      | 1839 | Done
 Direct3D 11 | 694  | Done
 Direct3D 12 | 1240 | Done
 
@@ -53,7 +53,8 @@ Coming soon.
 ## Running
 
 Make sure to run from within ```data``` directory as all paths are relative to it. API to be used can be specified on the command line
-as a single parameter (```-opengl```, ```-d3d11```, or ```-d3d12```). When run with no parameters ```-opengl``` is used.
+as a single parameter (```-opengl```, ```-vulkan```, ```-d3d11```, or ```-d3d12```). When run with no parameters ```-d3d11``` is used
+on Windows, and ```-opengl``` on other platforms.
 
 ### Controls
 

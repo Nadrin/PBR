@@ -1,6 +1,8 @@
 /*
  * Physically Based Rendering
- * Copyright (c) 2017 Michał Siejak
+ * Copyright (c) 2017-2018 Michał Siejak
+ *
+ * Direct3D 12 renderer.
  */
 
 #pragma once

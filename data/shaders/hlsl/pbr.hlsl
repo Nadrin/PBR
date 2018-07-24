@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Physically Based shading model: Lambetrtian diffuse BRDF + Cook-Torrance microfacet specular BRDF + IBL for ambient.
 

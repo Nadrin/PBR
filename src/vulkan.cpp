@@ -1,6 +1,8 @@
 ﻿/*
  * Physically Based Rendering
  * Copyright (c) 2017-2018 Michał Siejak
+ *
+ * Vulkan 1.0 renderer.
  */
 
 #include <stdexcept>

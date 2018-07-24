@@ -1,5 +1,5 @@
 // Physically Based Rendering
-// Copyright (c) 2017 Michał Siejak
+// Copyright (c) 2017-2018 Michał Siejak
 
 // Pre-integrates Cook-Torrance specular BRDF for varying roughness and viewing directions.
 // Results are saved into 2D LUT texture in the form of DFG1 and DFG2 split-sum approximation terms,
