@@ -195,11 +195,6 @@ void Renderer::setup()
 
 	// Create root signature & pipeline configuration for tonemapping.
 	{
-		const std::vector<D3D12_INPUT_ELEMENT_DESC> screenQuadInputLayout = {
-			{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		};
-
 		ComPtr<ID3DBlob> tonemapVS = compileShader("shaders/hlsl/tonemap.hlsl", "main_vs", "vs_5_0");
 		ComPtr<ID3DBlob> tonemapPS = compileShader("shaders/hlsl/tonemap.hlsl", "main_ps", "ps_5_0");
 
@@ -214,7 +209,6 @@ void Renderer::setup()
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = m_tonemapRootSignature.Get();
-		psoDesc.InputLayout = { screenQuadInputLayout.data(), (UINT)screenQuadInputLayout.size() };
 		psoDesc.VS = CD3DX12_SHADER_BYTECODE(tonemapVS.Get());
 		psoDesc.PS = CD3DX12_SHADER_BYTECODE(tonemapPS.Get());
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC{D3D12_DEFAULT};
@@ -230,9 +224,6 @@ void Renderer::setup()
 			throw std::runtime_error("Failed to create tonemap pipeline state");
 		}
 	}
-
-	// Create screen space quad vertex buffer (for tonemapping).
-	m_screenQuad = createClipSpaceQuad();
 
 	// Create root signature & pipeline configuration for rendering PBR model.
 	{
@@ -625,16 +616,13 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	m_commandList->OMSetRenderTargets(1, &backbuffer.rtv.cpuHandle, false, nullptr);
 
-	// Draw a full screen quad with tonemapping and gamma correction shader (post-processing).
+	// Draw a full screen triangle for postprocessing/tone mapping.
 	{
 		m_commandList->SetGraphicsRootSignature(m_tonemapRootSignature.Get());
 		m_commandList->SetGraphicsRootDescriptorTable(0, resolveFramebuffer.srv.gpuHandle);
 		m_commandList->SetPipelineState(m_tonemapPipelineState.Get());
 	
-		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		m_commandList->IASetVertexBuffers(0, 1, &m_screenQuad.vbv);
-
-		m_commandList->DrawInstanced(m_screenQuad.numElements, 1, 0, 0);
+		m_commandList->DrawInstanced(3, 1, 0, 0);
 	}
 	
 	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -722,47 +710,6 @@ MeshBuffer Renderer::createMeshBuffer(const std::shared_ptr<Mesh>& mesh) const
 	return buffer;
 }
 
-MeshBuffer Renderer::createClipSpaceQuad() const
-{
-	static const float vertices[] = {
-		 1.0f,  1.0f, 1.0f, 0.0f,
-		-1.0f,  1.0f, 0.0f, 0.0f,
-		 1.0f, -1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f,
-	};
-
-	MeshBuffer buffer;
-	buffer.numElements = 4;
-
-	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertices)),
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&buffer.vertexBuffer))))
-	{
-		throw std::runtime_error("Failed to create clip space quad vertex buffer");
-	}
-	buffer.vbv.BufferLocation = buffer.vertexBuffer->GetGPUVirtualAddress();
-	buffer.vbv.SizeInBytes = sizeof(vertices);
-	buffer.vbv.StrideInBytes = 4 * sizeof(float);
-
-	StagingBuffer vertexStagingBuffer;
-	{
-		const D3D12_SUBRESOURCE_DATA data = { vertices };
-		vertexStagingBuffer = createStagingBuffer(buffer.vertexBuffer, 0, 1, &data);
-	}
-
-	m_commandList->CopyResource(buffer.vertexBuffer.Get(), vertexStagingBuffer.buffer.Get());
-	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-	executeCommandList();
-	waitForGPU();
-
-	return buffer;
-}
-	
 UploadBuffer Renderer::createUploadBuffer(UINT capacity) const
 {
 	UploadBuffer buffer;

@@ -142,7 +142,6 @@ private:
 	DescriptorHeap createDescriptorHeap(const D3D12_DESCRIPTOR_HEAP_DESC& desc) const;
 
 	MeshBuffer createMeshBuffer(const std::shared_ptr<class Mesh>& mesh) const;
-	MeshBuffer createClipSpaceQuad() const;
 	UploadBuffer createUploadBuffer(UINT capacity) const;
 	UploadBufferRegion allocFromUploadBuffer(UploadBuffer& buffer, UINT size, int align) const;
 	StagingBuffer createStagingBuffer(const ComPtr<ID3D12Resource>& resource, UINT firstSubresource, UINT numSubresources, const D3D12_SUBRESOURCE_DATA* data) const;
@@ -198,7 +197,6 @@ private:
 		ComPtr<ID3D12PipelineState> arrayTexturePipelineState;
 	} m_mipmapGeneration;
 
-	MeshBuffer m_screenQuad;
 	MeshBuffer m_pbrModel;
 	MeshBuffer m_skybox;
 
