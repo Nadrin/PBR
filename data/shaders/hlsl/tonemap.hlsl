@@ -7,11 +7,6 @@ static const float gamma     = 2.2;
 static const float exposure  = 1.0;
 static const float pureWhite = 1.0;
 
-struct VertexShaderInput
-{
-	float2 position : POSITION;
-	float2 texcoord : TEXCOORD;
-};
 struct PixelShaderInput
 {
 	float4 position : SV_POSITION;
@@ -21,11 +16,22 @@ struct PixelShaderInput
 Texture2D sceneColor: register(t0);
 SamplerState defaultSampler : register(s0);
 
-PixelShaderInput main_vs(VertexShaderInput vin)
+PixelShaderInput main_vs(uint vertexID : SV_VertexID)
 {
 	PixelShaderInput vout;
-	vout.texcoord = vin.texcoord;
-	vout.position = float4(vin.position, 0.0, 1.0);
+
+	if(vertexID == 0) {
+		vout.texcoord = float2(1.0, -1.0);
+		vout.position = float4(1.0, 3.0, 0.0, 1.0);
+	}
+	else if(vertexID == 1) {
+		vout.texcoord = float2(-1.0, 1.0);
+		vout.position = float4(-3.0, -1.0, 0.0, 1.0);
+	}
+	else /* if(vertexID == 2) */ {
+		vout.texcoord = float2(1.0, 1.0);
+		vout.position = float4(1.0, -1.0, 0.0, 1.0);
+	}
 	return vout;
 }
 

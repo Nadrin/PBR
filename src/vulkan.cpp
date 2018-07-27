@@ -1069,7 +1069,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Transition to tone mapping subpass
 	vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 
-	// Draw full screen triangle for postprocessing/tone mapping.
+	// Draw a full screen triangle for postprocessing/tone mapping.
 	{
 		const std::array<VkDescriptorSet, 1> descriptorSets = {
 			tonemapDescriptorSet

@@ -144,10 +144,6 @@ void Renderer::setup()
 	const std::vector<D3D11_INPUT_ELEMENT_DESC> skyboxInputLayout = {
 		{ "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> screenQuadInputLayout = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
 
 	ID3D11UnorderedAccessView* const nullUAV[] = { nullptr };
 	ID3D11Buffer* const nullBuffer[] = { nullptr };
@@ -184,20 +180,18 @@ void Renderer::setup()
 	m_pbrProgram = createShaderProgram(
 		compileShader("shaders/hlsl/pbr.hlsl", "main_vs", "vs_5_0"),
 		compileShader("shaders/hlsl/pbr.hlsl", "main_ps", "ps_5_0"),
-		meshInputLayout
+		&meshInputLayout
 	);
 	m_skyboxProgram = createShaderProgram(
 		compileShader("shaders/hlsl/skybox.hlsl", "main_vs", "vs_5_0"),
 		compileShader("shaders/hlsl/skybox.hlsl", "main_ps", "ps_5_0"),
-		skyboxInputLayout
+		&skyboxInputLayout
 	);
 	m_tonemapProgram = createShaderProgram(
 		compileShader("shaders/hlsl/tonemap.hlsl", "main_vs", "vs_5_0"),
 		compileShader("shaders/hlsl/tonemap.hlsl", "main_ps", "ps_5_0"),
-		screenQuadInputLayout
+		nullptr
 	);
-
-	m_screenQuad = createClipSpaceQuad();
 
 	m_pbrModel = createMeshBuffer(Mesh::fromFile("meshes/cerberus.fbx"));
 	m_skybox = createMeshBuffer(Mesh::fromFile("meshes/skybox.obj"));
@@ -380,16 +374,14 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Resolve multisample framebuffer.
 	resolveFrameBuffer(m_framebuffer, m_resolveFramebuffer, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
-	// Draw a full screen quad with tonemapping and gamma correction shader (post-processing).
+	// Draw a full screen triangle for postprocessing/tone mapping.
 	m_context->OMSetRenderTargets(1, m_backBufferRTV.GetAddressOf(), nullptr);
-	m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_context->IASetInputLayout(m_tonemapProgram.inputLayout.Get());
-	m_context->IASetVertexBuffers(0, 1, m_screenQuad.vertexBuffer.GetAddressOf(), &m_screenQuad.stride, &m_screenQuad.offset);
+	m_context->IASetInputLayout(nullptr);
 	m_context->VSSetShader(m_tonemapProgram.vertexShader.Get(), nullptr, 0);
 	m_context->PSSetShader(m_tonemapProgram.pixelShader.Get(), nullptr, 0);
 	m_context->PSSetShaderResources(0, 1, m_resolveFramebuffer.srv.GetAddressOf());
 	m_context->PSSetSamplers(0, 1, m_computeSampler.GetAddressOf());
-	m_context->Draw(m_screenQuad.numElements, 0);
+	m_context->Draw(3, 0);
 
 	m_swapChain->Present(1, 0);
 }
@@ -426,32 +418,6 @@ MeshBuffer Renderer::createMeshBuffer(const std::shared_ptr<class Mesh>& mesh) c
 		if(FAILED(m_device->CreateBuffer(&desc, &data, &buffer.indexBuffer))) {
 			throw std::runtime_error("Failed to create index buffer");
 		}
-	}
-	return buffer;
-}
-	
-MeshBuffer Renderer::createClipSpaceQuad() const
-{
-	static const float vertices[] = {
-		 1.0f,  1.0f, 1.0f, 0.0f,
-		-1.0f,  1.0f, 0.0f, 0.0f,
-		 1.0f, -1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f,
-	};
-	
-	MeshBuffer buffer = {};
-	buffer.stride = 4 * sizeof(float);
-	buffer.numElements = 4;
-
-	D3D11_BUFFER_DESC desc = {};
-	desc.ByteWidth = sizeof(vertices);
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
-	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA data = {};
-	data.pSysMem = vertices;
-	if(FAILED(m_device->CreateBuffer(&desc, &data, &buffer.vertexBuffer))) {
-		throw std::runtime_error("Failed to create clip space quad vertex buffer");
 	}
 	return buffer;
 }
@@ -582,17 +548,21 @@ ComPtr<ID3D11SamplerState> Renderer::createSamplerState(D3D11_FILTER filter, D3D
 	return samplerState;
 }
 
-ShaderProgram Renderer::createShaderProgram(const ComPtr<ID3DBlob>& vsBytecode, const ComPtr<ID3DBlob>& psBytecode, const std::vector<D3D11_INPUT_ELEMENT_DESC>& inputLayoutDesc) const
+ShaderProgram Renderer::createShaderProgram(const ComPtr<ID3DBlob>& vsBytecode, const ComPtr<ID3DBlob>& psBytecode, const std::vector<D3D11_INPUT_ELEMENT_DESC>* inputLayoutDesc) const
 {
 	ShaderProgram program;
+
 	if(FAILED(m_device->CreateVertexShader(vsBytecode->GetBufferPointer(), vsBytecode->GetBufferSize(), nullptr, &program.vertexShader))) {
 		throw std::runtime_error("Failed to create vertex shader from compiled bytecode");
 	}
 	if(FAILED(m_device->CreatePixelShader(psBytecode->GetBufferPointer(), psBytecode->GetBufferSize(), nullptr, &program.pixelShader))) {
 		throw std::runtime_error("Failed to create pixel shader from compiled bytecode");
 	}
-	if(FAILED(m_device->CreateInputLayout(inputLayoutDesc.data(), (UINT)inputLayoutDesc.size(), vsBytecode->GetBufferPointer(), vsBytecode->GetBufferSize(), &program.inputLayout))) {
-		throw std::runtime_error("Failed to create shader program input layout");
+
+	if(inputLayoutDesc) {
+		if(FAILED(m_device->CreateInputLayout(inputLayoutDesc->data(), (UINT)inputLayoutDesc->size(), vsBytecode->GetBufferPointer(), vsBytecode->GetBufferSize(), &program.inputLayout))) {
+			throw std::runtime_error("Failed to create shader program input layout");
+		}
 	}
 	return program;
 }

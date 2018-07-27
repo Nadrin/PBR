@@ -70,8 +70,7 @@ public:
 
 private:
 	MeshBuffer createMeshBuffer(const std::shared_ptr<class Mesh>& mesh) const;
-	MeshBuffer createClipSpaceQuad() const;
-	ShaderProgram createShaderProgram(const ComPtr<ID3DBlob>& vsBytecode, const ComPtr<ID3DBlob>& psBytecode, const std::vector<D3D11_INPUT_ELEMENT_DESC>& inputLayoutDesc) const;
+	ShaderProgram createShaderProgram(const ComPtr<ID3DBlob>& vsBytecode, const ComPtr<ID3DBlob>& psBytecode, const std::vector<D3D11_INPUT_ELEMENT_DESC>* inputLayoutDesc) const;
 	ComputeProgram createComputeProgram(const ComPtr<ID3DBlob>& csBytecode) const;
 	ComPtr<ID3D11SamplerState> createSamplerState(D3D11_FILTER filter, D3D11_TEXTURE_ADDRESS_MODE addressMode) const;
 
@@ -116,7 +115,6 @@ private:
 	ShaderProgram m_skyboxProgram;
 	ShaderProgram m_tonemapProgram;
 	
-	MeshBuffer m_screenQuad;
 	MeshBuffer m_pbrModel;
 	MeshBuffer m_skybox;
 

@@ -307,7 +307,7 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	// Resolve multisample framebuffer.
 	resolveFramebuffer(m_framebuffer, m_resolveFramebuffer);
 
-	// Draw a full screen quad with tonemapping and gamma correction shader (post-processing).
+	// Draw a full screen triangle for postprocessing/tone mapping.
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(m_tonemapProgram);
 	glBindTextureUnit(0, m_resolveFramebuffer.colorTarget);
