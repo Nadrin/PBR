@@ -1193,10 +1193,11 @@ void Renderer::executeCommandList(bool reset) const
 void Renderer::waitForGPU() const
 {
 	UINT64& fenceValue = m_fenceValues[m_frameIndex];
+	++fenceValue;
+
 	m_commandQueue->Signal(m_fence.Get(), fenceValue);
 	m_fence->SetEventOnCompletion(fenceValue, m_fenceCompletionEvent);
 	WaitForSingleObject(m_fenceCompletionEvent, INFINITE);
-	++fenceValue;
 }
 	
 void Renderer::presentFrame()
