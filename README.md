@@ -1,5 +1,5 @@
 # Physically Based Rendering
-(c) 2017 -- 2018 Michał Siejak
+(c) 2017 - 2018 Michał Siejak ([@Nadrin](https://twitter.com/Nadrin))
 
 An implementation of physically based shading model & image based lighting in various graphics APIs.
 
@@ -9,8 +9,8 @@ API         | SLOC | Implementation status
 ------------|------|----------------------
 OpenGL 4.5  | 504  | Done
 Vulkan      | 1839 | Done
-Direct3D 11 | 694  | Done
-Direct3D 12 | 1240 | Done
+Direct3D 11 | 666 :smiling_imp: | Done
+Direct3D 12 | 1198 | Done
 
 ## About
 
