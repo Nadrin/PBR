@@ -5,3 +5,4 @@ Release/
 data/*.exe
 data/*.dll
 data/shaders/spirv/
+projects/cmake/build/
