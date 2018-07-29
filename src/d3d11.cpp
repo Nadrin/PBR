@@ -5,6 +5,8 @@
  * Direct3D 11 renderer.
  */
 
+#if defined(ENABLE_D3D11)
+
 #include <stdexcept>
 
 #include <glm/glm.hpp>
@@ -686,3 +688,5 @@ ComPtr<ID3DBlob> Renderer::compileShader(const std::string& filename, const std:
 }
 	
 } // D3D11
+
+#endif // ENABLE_D3D11

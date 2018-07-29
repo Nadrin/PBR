@@ -7,6 +7,12 @@
 
 #pragma once
 
+#if defined(ENABLE_D3D12)
+
+#if !defined(_WIN32)
+#error "D3D12 renderer can only be enabled on Windows platform"
+#endif
+
 #include <memory>
 #include <d3d12.h>
 #include <dxgi1_4.h>
@@ -225,3 +231,5 @@ private:
 };
 
 } // D3D12
+
+#endif // ENABLE_D3D12

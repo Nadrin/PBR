@@ -3,59 +3,89 @@
  * Copyright (c) 2017-2018 Michał Siejak
  */
 
+#if !(defined(ENABLE_OPENGL) || defined(ENABLE_VULKAN) || defined(ENABLE_D3D11) || defined(ENABLE_D3D12))
+#error "At least one renderer implementation must be enabled via an appropriate ENABLE_* preprocessor macro"
+#endif
+
 #include <cstdio>
-#include <cstring>
+#include <string>
 #include <memory>
 
 #include "application.hpp"
 
 #include "../opengl.hpp"
 #include "../vulkan.hpp"
-
-#if defined(PLATFORM_WINDOWS)
 #include "../d3d11.hpp"
 #include "../d3d12.hpp"
+
+static void printUsage(const char* argv0)
+{
+	const std::vector<const char*> flags = {
+#if defined(ENABLE_OPENGL)
+		"-opengl",
 #endif
+#if defined(ENABLE_VULKAN)
+		"-vulkan",
+#endif
+#if defined(ENABLE_D3D11)
+		"-d3d11",
+#endif
+#if defined(ENABLE_D3D12)
+		"-d3d12",
+#endif
+	};
+
+	std::fprintf(stderr, "Usage: %s [", argv0);
+	for(size_t i=0; i<flags.size(); ++i) {
+		std::fprintf(stderr, "%s%s", flags[i], i < (flags.size()-1) ? "|":"");
+	}
+	std::fprintf(stderr, "]\n");
+}
 
 int main(int argc, char* argv[])
 {
-	try {
-		RendererInterface* renderer;
+	RendererInterface* renderer = nullptr;
 
-		if(argc < 2) {
-#if defined(PLATFORM_WINDOWS)
-			renderer = new D3D11::Renderer;
+	if(argc < 2) {
+#if defined(ENABLE_D3D11)
+		renderer = new D3D11::Renderer;
 #else
-			renderer = new OpenGL::Renderer;
+		renderer = new OpenGL::Renderer;
 #endif
-		}
-		else if(strcmp(argv[1], "-opengl") == 0) {
+	}
+	else {
+		const std::string flag = argv[1];
+#if defined(ENABLE_OPENGL)
+		if(flag == "-opengl") {
 			renderer = new OpenGL::Renderer;
 		}
-		else if(strcmp(argv[1], "-vulkan") == 0) {
+#endif
+#if defined(ENABLE_VULKAN)
+		if(flag == "-vulkan") {
 			renderer = new Vulkan::Renderer;
 		}
-#if defined(PLATFORM_WINDOWS)
-		else if(strcmp(argv[1], "-d3d11") == 0) {
+#endif
+#if defined(ENABLE_D3D11)
+		if(flag == "-d3d11") {
 			renderer = new D3D11::Renderer;
 		}
-		else if(strcmp(argv[1], "-d3d12") == 0) {
+#endif
+#if defined(ENABLE_D3D12)
+		if(flag == "-d3d12") {
 			renderer = new D3D12::Renderer;
 		}
 #endif
-		else {
-#if defined(PLATFORM_WINDOWS)
-			std::fprintf(stderr, "Usage: %s [-opengl|-vulkan|-d3d11|-d3d12]\n", argv[0]);
-#else
-			std::fprintf(stderr, "Usage: %s [-opengl|-vulkan]\n", argv[0]);
-#endif
+		if(!renderer) {
+			printUsage(argv[0]);
 			return 1;
 		}
+	}
 
-		Application().run(std::unique_ptr<RendererInterface>{renderer});
+	try {
+		Application().run(std::unique_ptr<RendererInterface>{ renderer });
 	}
 	catch(const std::exception& e) {
 		std::fprintf(stderr, "Error: %s\n", e.what());
-		return -1;
+		return 1;
 	}
 }

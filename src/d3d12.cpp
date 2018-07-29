@@ -5,6 +5,8 @@
  * Direct3D 12 renderer.
  */
 
+#if defined(ENABLE_D3D12)
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -1257,3 +1259,5 @@ ComPtr<ID3DBlob> Renderer::compileShader(const std::string& filename, const std:
 }
 
 } // D3D12
+
+#endif // ENABLE_D3D12

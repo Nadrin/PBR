@@ -5,6 +5,8 @@
  * OpenGL 4.5 renderer.
  */
 
+#if defined(ENABLE_OPENGL)
+
 #include <stdexcept>
 #include <memory>
 
@@ -542,3 +544,5 @@ void Renderer::logMessage(GLenum source, GLenum type, GLuint id, GLenum severity
 #endif
 
 } // OpenGL
+
+#endif // ENABLE_OPENGL

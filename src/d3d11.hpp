@@ -7,6 +7,12 @@
 
 #pragma once
 
+#if defined(ENABLE_D3D11)
+
+#if !defined(_WIN32)
+#error "D3D11 renderer can only be enabled on Windows platform"
+#endif
+
 #include <vector>
 #include <memory>
 #include <d3d11.h>
@@ -129,3 +135,5 @@ private:
 };
 
 } // D3D11
+
+#endif // ENABLE_D3D11

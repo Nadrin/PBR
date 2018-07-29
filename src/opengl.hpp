@@ -7,6 +7,8 @@
 
 #pragma once
 
+#if defined(ENABLE_OPENGL)
+
 #include <string>
 #include <glad/glad.h>
 
@@ -102,3 +104,5 @@ private:
 };
 
 } // OpenGL
+
+#endif // ENABLE_OPENGL

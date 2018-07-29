@@ -7,6 +7,8 @@
 
 #pragma once
 
+#if defined(ENABLE_VULKAN)
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -263,3 +265,5 @@ private:
 };
 
 } // Vulkan
+
+#endif // ENABLE_VULKAN

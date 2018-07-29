@@ -5,6 +5,8 @@
  * Vulkan 1.0 renderer.
  */
 
+#if defined(ENABLE_VULKAN)
+
 #include <stdexcept>
 #include <algorithm>
 #include <array>
@@ -2026,3 +2028,5 @@ VkBool32 Renderer::logMessage(VkDebugReportFlagsEXT flags, VkDebugReportObjectTy
 #endif
 
 } // Vulkan
+
+#endif // ENABLE_VULKAN
