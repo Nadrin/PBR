@@ -56,6 +56,31 @@ static RendererInterface* createDefaultRenderer()
 #endif
 }
 
+static RendererInterface* createNamedRenderer(const std::string& flag)
+{
+#if defined(ENABLE_OPENGL)
+	if(flag == "-opengl") {
+		return new OpenGL::Renderer;
+	}
+#endif
+#if defined(ENABLE_VULKAN)
+	if(flag == "-vulkan") {
+		return new Vulkan::Renderer;
+	}
+#endif
+#if defined(ENABLE_D3D11)
+	if(flag == "-d3d11") {
+		return new D3D11::Renderer;
+	}
+#endif
+#if defined(ENABLE_D3D12)
+	if(flag == "-d3d12") {
+		return new D3D12::Renderer;
+	}
+#endif
+	return nullptr;
+}
+
 int main(int argc, char* argv[])
 {
 	RendererInterface* renderer = nullptr;
@@ -64,27 +89,7 @@ int main(int argc, char* argv[])
 		renderer = createDefaultRenderer();
 	}
 	else {
-		const std::string flag = argv[1];
-#if defined(ENABLE_OPENGL)
-		if(flag == "-opengl") {
-			renderer = new OpenGL::Renderer;
-		}
-#endif
-#if defined(ENABLE_VULKAN)
-		if(flag == "-vulkan") {
-			renderer = new Vulkan::Renderer;
-		}
-#endif
-#if defined(ENABLE_D3D11)
-		if(flag == "-d3d11") {
-			renderer = new D3D11::Renderer;
-		}
-#endif
-#if defined(ENABLE_D3D12)
-		if(flag == "-d3d12") {
-			renderer = new D3D12::Renderer;
-		}
-#endif
+		renderer = createNamedRenderer(argv[1]);
 		if(!renderer) {
 			printUsage(argv[0]);
 			return 1;
