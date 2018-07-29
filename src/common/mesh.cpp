@@ -21,7 +21,6 @@ namespace {
 		aiProcess_GenNormals |
 		aiProcess_GenUVCoords |
 		aiProcess_OptimizeMeshes |
-		aiProcess_OptimizeGraph |
 		aiProcess_Debone |
 		aiProcess_ValidateDataStructure;
 }
