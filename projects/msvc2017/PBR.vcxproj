@@ -186,7 +186,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;PLATFORM_WINDOWS;NOMINMAX;GLFW_INCLUDE_NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;PLATFORM_WINDOWS;NOMINMAX;GLFW_INCLUDE_NONE;GLM_ENABLE_EXPERIMENTAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;$(ProjectDir)\..\..\lib\volk\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -228,7 +228,7 @@ if not exist %ROOTDIR%\data\shaders\spirv mkdir %ROOTDIR%\data\shaders\spirv
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;PLATFORM_WINDOWS;NOMINMAX;GLFW_INCLUDE_NONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;PLATFORM_WINDOWS;NOMINMAX;GLFW_INCLUDE_NONE;GLM_ENABLE_EXPERIMENTAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)\..\..\lib\glfw\include;$(ProjectDir)\..\..\lib\glad\include;$(ProjectDir)\..\..\lib\glm\include;$(ProjectDir)\..\..\lib\stb\include;$(ProjectDir)\..\..\lib\assimp\include;$(ProjectDir)\..\..\lib\d3dx12;$(ProjectDir)\..\..\lib\volk\include;$(VULKAN_SDK)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>

@@ -3,11 +3,11 @@
 
 namespace glm
 {
-	template <typename genType>
+	template<typename genType>
 	GLM_FUNC_QUALIFIER bool intersectRayPlane
 	(
-		genType const & orig, genType const & dir,
-		genType const & planeOrig, genType const & planeNormal,
+		genType const& orig, genType const& dir,
+		genType const& planeOrig, genType const& planeNormal,
 		typename genType::value_type & intersectionDistance
 	)
 	{
@@ -23,21 +23,75 @@ namespace glm
 		return false;
 	}
 
-	template <typename genType>
+	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER bool intersectRayTriangle
 	(
-		genType const & orig, genType const & dir,
-		genType const & v0, genType const & v1, genType const & v2,
-		genType & baryPosition
+		vec<3, T, Q> const& orig, vec<3, T, Q> const& dir,
+		vec<3, T, Q> const& vert0, vec<3, T, Q> const& vert1, vec<3, T, Q> const& vert2,
+		vec<2, T, Q>& baryPosition, T& distance
 	)
 	{
-		genType e1 = v1 - v0;
-		genType e2 = v2 - v0;
+		// find vectors for two edges sharing vert0
+		vec<3, T, Q> const edge1 = vert1 - vert0;
+		vec<3, T, Q> const edge2 = vert2 - vert0;
 
-		genType p = glm::cross(dir, e2);
+		// begin calculating determinant - also used to calculate U parameter
+		vec<3, T, Q> const p = glm::cross(dir, edge2);
 
-		typename genType::value_type a = glm::dot(e1, p);
+		// if determinant is near zero, ray lies in plane of triangle
+		T const det = glm::dot(edge1, p);
 
+		vec<3, T, Q> qvec;
+
+		if(det > std::numeric_limits<T>::epsilon())
+		{
+			// calculate distance from vert0 to ray origin
+			vec<3, T, Q> const tvec = orig - vert0;
+
+			// calculate U parameter and test bounds
+			baryPosition.x = glm::dot(tvec, p);
+			if(baryPosition.x < static_cast<T>(0) || baryPosition.x > det)
+				return false;
+
+			// prepare to test V parameter
+			qvec = glm::cross(tvec, edge1);
+
+			// calculate V parameter and test bounds
+			baryPosition.y = glm::dot(dir, qvec);
+			if((baryPosition.y < static_cast<T>(0)) || ((baryPosition.x + baryPosition.y) > det))
+				return false;
+		}
+		else if(det < -std::numeric_limits<T>::epsilon())
+		{
+			// calculate distance from vert0 to ray origin
+			vec<3, T, Q> const tvec = orig - vert0;
+
+			// calculate U parameter and test bounds
+			baryPosition.x = glm::dot(tvec, p);
+			if((baryPosition.x > static_cast<T>(0)) || (baryPosition.x < det))
+				return false;
+
+			// prepare to test V parameter
+			qvec = glm::cross(tvec, edge1);
+
+			// calculate V parameter and test bounds
+			baryPosition.y = glm::dot(dir, qvec);
+			if((baryPosition.y > static_cast<T>(0)) || (baryPosition.x + baryPosition.y < det))
+				return false;
+		}
+		else
+			return false; // ray is parallel to the plane of the triangle
+
+		T inv_det = static_cast<T>(1) / det;
+
+		// calculate distance, ray intersects triangle
+		distance = glm::dot(edge2, qvec) * inv_det;
+		baryPosition *= inv_det;
+
+		return true;
+	}
+
+/*
 		typename genType::value_type Epsilon = std::numeric_limits<typename genType::value_type>::epsilon();
 		if(a < Epsilon && a > -Epsilon)
 			return false;
@@ -62,12 +116,13 @@ namespace glm
 
 		return baryPosition.z >= typename genType::value_type(0.0f);
 	}
+*/
 
-	template <typename genType>
+	template<typename genType>
 	GLM_FUNC_QUALIFIER bool intersectLineTriangle
 	(
-		genType const & orig, genType const & dir,
-		genType const & vert0, genType const & vert1, genType const & vert2,
+		genType const& orig, genType const& dir,
+		genType const& vert0, genType const& vert1, genType const& vert2,
 		genType & position
 	)
 	{
@@ -101,11 +156,11 @@ namespace glm
 		return true;
 	}
 
-	template <typename genType>
+	template<typename genType>
 	GLM_FUNC_QUALIFIER bool intersectRaySphere
 	(
-		genType const & rayStarting, genType const & rayNormalizedDirection,
-		genType const & sphereCenter, const typename genType::value_type sphereRadiusSquered,
+		genType const& rayStarting, genType const& rayNormalizedDirection,
+		genType const& sphereCenter, const typename genType::value_type sphereRadiusSquered,
 		typename genType::value_type & intersectionDistance
 	)
 	{
@@ -122,11 +177,11 @@ namespace glm
 		return intersectionDistance > Epsilon;
 	}
 
-	template <typename genType>
+	template<typename genType>
 	GLM_FUNC_QUALIFIER bool intersectRaySphere
 	(
-		genType const & rayStarting, genType const & rayNormalizedDirection,
-		genType const & sphereCenter, const typename genType::value_type sphereRadius,
+		genType const& rayStarting, genType const& rayNormalizedDirection,
+		genType const& sphereCenter, const typename genType::value_type sphereRadius,
 		genType & intersectionPosition, genType & intersectionNormal
 	)
 	{
@@ -140,12 +195,12 @@ namespace glm
 		return false;
 	}
 
-	template <typename genType>
+	template<typename genType>
 	GLM_FUNC_QUALIFIER bool intersectLineSphere
 	(
-		genType const & point0, genType const & point1,
-		genType const & sphereCenter, typename genType::value_type sphereRadius,
-		genType & intersectionPoint1, genType & intersectionNormal1, 
+		genType const& point0, genType const& point1,
+		genType const& sphereCenter, typename genType::value_type sphereRadius,
+		genType & intersectionPoint1, genType & intersectionNormal1,
 		genType & intersectionPoint2, genType & intersectionNormal2
 	)
 	{

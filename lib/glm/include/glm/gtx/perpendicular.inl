@@ -3,12 +3,8 @@
 
 namespace glm
 {
-	template <typename vecType> 
-	GLM_FUNC_QUALIFIER vecType perp
-	(
-		vecType const & x, 
-		vecType const & Normal
-	)
+	template<typename genType>
+	GLM_FUNC_QUALIFIER genType perp(genType const& x, genType const& Normal)
 	{
 		return x - proj(x, Normal);
 	}

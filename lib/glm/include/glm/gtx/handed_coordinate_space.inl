@@ -3,23 +3,23 @@
 
 namespace glm
 {
-	template <typename T, precision P>
+	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER bool rightHanded
 	(
-		tvec3<T, P> const & tangent,
-		tvec3<T, P> const & binormal,
-		tvec3<T, P> const & normal
+		vec<3, T, Q> const& tangent,
+		vec<3, T, Q> const& binormal,
+		vec<3, T, Q> const& normal
 	)
 	{
 		return dot(cross(normal, tangent), binormal) > T(0);
 	}
 
-	template <typename T, precision P>
+	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER bool leftHanded
 	(
-		tvec3<T, P> const & tangent,
-		tvec3<T, P> const & binormal,
-		tvec3<T, P> const & normal
+		vec<3, T, Q> const& tangent,
+		vec<3, T, Q> const& binormal,
+		vec<3, T, Q> const& normal
 	)
 	{
 		return dot(cross(normal, tangent), binormal) < T(0);
