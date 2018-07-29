@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "application.hpp"
 
@@ -42,16 +43,25 @@ static void printUsage(const char* argv0)
 	std::fprintf(stderr, "]\n");
 }
 
+static RendererInterface* createDefaultRenderer()
+{
+#if defined(ENABLE_D3D11)
+	return new D3D11::Renderer;
+#elif defined(ENABLE_D3D12)
+	return new D3D12::Renderer;
+#elif defined(ENABLE_OPENGL)
+	return new OpenGL::Renderer;
+#elif defined(ENABLE_VULKAN)
+	return new Vulkan::Renderer;
+#endif
+}
+
 int main(int argc, char* argv[])
 {
 	RendererInterface* renderer = nullptr;
 
 	if(argc < 2) {
-#if defined(ENABLE_D3D11)
-		renderer = new D3D11::Renderer;
-#else
-		renderer = new OpenGL::Renderer;
-#endif
+		renderer = createDefaultRenderer();
 	}
 	else {
 		const std::string flag = argv[1];
