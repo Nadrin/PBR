@@ -2,7 +2,8 @@
 .vs/
 Debug/
 Release/
-data/*.exe
+data/PBR
+data/PBR.exe
 data/*.dll
 data/shaders/spirv/
 projects/cmake/build/
