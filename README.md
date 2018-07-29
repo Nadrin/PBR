@@ -7,10 +7,10 @@ An implementation of physically based shading model & image based lighting in va
 
 API         | SLOC | Implementation status
 ------------|------|----------------------
-OpenGL 4.5  | 504  | Done
-Vulkan      | 1839 | Done
-Direct3D 11 | 666 :smiling_imp: | Done
-Direct3D 12 | 1198 | Done
+OpenGL 4.5  | 508  | Done
+Vulkan      | 1843 | Done
+Direct3D 11 | 673  | Done
+Direct3D 12 | 1205 | Done
 
 ## About
 
@@ -48,7 +48,32 @@ for x64 target.
 
 ### Linux
 
-Coming soon.
+#### Prerequisites
+
+ - C/C++ compiler supporting C++14
+ - CMake 3.8 or newer
+ - pkg-config
+ - [glslang from Khronos](https://github.com/KhronosGroup/glslang/releases/tag/master-tot)
+ - Development files for GLFW3, Assimp, OpenGL & Vulkan
+ 
+#### How to build
+
+1. Install prerequisites; for Debian/Ubuntu:
+```
+sudo apt install build-essential cmake pkg-config libglfw3-dev libassimp-dev libgl1-mesa-dev libvulkan-dev
+```
+    
+2. Download & install glslang. Make sure that `glslangValidator` binary is in `PATH` or in `/opt/glslang/bin`.
+
+3. Configure & build the project:
+```
+mkdir -p projects/cmake/build
+cd projects/cmake/build
+cmake ..
+make install
+```
+
+4. After successful build the resulting executable can be found in ```data``` directory.
 
 ## Running
 
