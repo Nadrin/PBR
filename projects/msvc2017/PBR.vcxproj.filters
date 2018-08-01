@@ -57,6 +57,9 @@
     <ClCompile Include="..\..\lib\volk\src\volk.c">
       <Filter>src\lib</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\common\optimus.cpp">
+      <Filter>src\common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\opengl.hpp">

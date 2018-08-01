@@ -27,6 +27,7 @@ set(srcCommon
     ../../src/common/main.cpp
     ../../src/common/mesh.cpp
     ../../src/common/mesh.hpp
+    ../../src/common/optimus.cpp
     ../../src/common/renderer.hpp
     ../../src/common/utils.cpp
     ../../src/common/utils.hpp
