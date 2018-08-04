@@ -75,6 +75,10 @@ make install
 
 4. After successful build the resulting executable can be found in ```data``` directory.
 
+### macOS
+
+[Help wanted](https://github.com/Nadrin/PBR/issues/2).
+
 ## Running
 
 Make sure to run from within ```data``` directory as all paths are relative to it. API to be used can be specified on the command line
