@@ -183,7 +183,7 @@ void Renderer::setup()
 	defaultSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	
 	CD3DX12_STATIC_SAMPLER_DESC computeSamplerDesc{0, D3D12_FILTER_MIN_MAG_MIP_LINEAR};
-	defaultSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	computeSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	CD3DX12_STATIC_SAMPLER_DESC spBRDF_SamplerDesc{1, D3D12_FILTER_MIN_MAG_MIP_LINEAR};
 	spBRDF_SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
