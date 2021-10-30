@@ -11,6 +11,7 @@
 #include <assimp/LogStream.hpp>
 
 #include "mesh.hpp"
+#include <stdexcept>
 
 namespace {
 	const unsigned int ImportFlags = 

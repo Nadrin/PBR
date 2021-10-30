@@ -24,6 +24,7 @@
 #include "common/utils.hpp"
 
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 #define VKSUCCESS(x) ((x) == VK_SUCCESS)
 #define VKFAILED(x)  ((x) != VK_SUCCESS)
@@ -52,11 +53,30 @@ struct SpecularFilterPushConstants
 	float roughness;
 };
 
+void add_spirv(const char* shadername, const char* stage)
+{
+	char cmdline[225];
+	sprintf(cmdline, "glslangValidator -V -S %s -o \".\\shaders\\spirv\\%s.spv\" \".\\shaders\\glsl\\%s.glsl\" ", stage, shadername, shadername);
+	std::cout << cmdline << std::endl;
+	system(cmdline);
+}
+
 GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 {
 	if(VKFAILED(volkInitialize())) {
 		throw std::runtime_error("Vulkan loader has not been found");
 	}
+
+	add_spirv("equirect2cube_cs", "comp");
+	add_spirv("irmap_cs", "comp");
+	add_spirv("pbr_fs", "frag");
+	add_spirv("pbr_vs", "vert");
+	add_spirv("skybox_fs", "frag");
+	add_spirv("skybox_vs", "vert");
+	add_spirv("spbrdf_cs", "comp");
+	add_spirv("spmap_cs", "comp");
+	add_spirv("tonemap_fs", "frag");
+	add_spirv("tonemap_vs", "vert");
 
 	// Create instance
 	{
@@ -70,7 +90,7 @@ GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 		}
 
 #if _DEBUG
-		instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+		instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 		instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 #endif
 
@@ -81,15 +101,19 @@ GLFWwindow* Renderer::initialize(int width, int height, int maxSamples)
 		instanceCreateInfo.pApplicationInfo = &appInfo;
 
 		if(!instanceLayers.empty()) {
-			instanceCreateInfo.enabledLayerCount = (uint32_t)instanceLayers.size();
-			instanceCreateInfo.ppEnabledLayerNames = &instanceLayers[0];
+			instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers.size());
+			instanceCreateInfo.ppEnabledLayerNames = instanceLayers.data();
 		}
 		if(!instanceExtensions.empty()) {
 			instanceCreateInfo.enabledExtensionCount = (uint32_t)instanceExtensions.size();
 			instanceCreateInfo.ppEnabledExtensionNames = &instanceExtensions[0];
 		}
-		if(VKFAILED(vkCreateInstance(&instanceCreateInfo, nullptr, &m_instance))) {
-			throw std::runtime_error("Failed to create Vulkan instance");
+		auto res = vkCreateInstance(&instanceCreateInfo, nullptr, &m_instance);
+		if(VKFAILED(res)) {
+			char re[50];
+			sprintf(re, "Failed to create Vulkan instance: %d", res);
+			throw std::runtime_error(re);
+			//throw std::runtime_error("Failed to create Vulkan instance");
 		}
 		volkLoadInstance(m_instance);
 	}

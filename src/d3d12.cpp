@@ -373,15 +373,16 @@ void Renderer::setup()
 				if(FAILED(m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)))) {
 					throw std::runtime_error("Failed to create compute pipeline state (equirect2cube)");
 				}
-
-				m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(envTextureUnfiltered.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+				auto RB = CD3DX12_RESOURCE_BARRIER::Transition(envTextureUnfiltered.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+				m_commandList->ResourceBarrier(1, &RB);
 				m_commandList->SetDescriptorHeaps(1, computeDescriptorHeaps);
 				m_commandList->SetPipelineState(pipelineState.Get());
 				m_commandList->SetComputeRootSignature(computeRootSignature.Get());
 				m_commandList->SetComputeRootDescriptorTable(0, envTextureEquirect.srv.gpuHandle);
 				m_commandList->SetComputeRootDescriptorTable(1, envTextureUnfiltered.uav.gpuHandle);
 				m_commandList->Dispatch(m_envTexture.width/32, m_envTexture.height/32, 6);
-				m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(envTextureUnfiltered.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
+				auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(envTextureUnfiltered.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+				m_commandList->ResourceBarrier(1, &RB2);
 
 				// This will implicitly execute command list & wait for GPU to finish.
 				generateMipmaps(envTextureUnfiltered);
@@ -413,7 +414,9 @@ void Renderer::setup()
 				m_commandList->ResourceBarrier(2, preCopyBarriers);
 				for(UINT arraySlice=0; arraySlice<6; ++arraySlice) {
 					const UINT subresourceIndex = D3D12CalcSubresource(0, arraySlice, 0, m_envTexture.levels, 6);
-					m_commandList->CopyTextureRegion(&CD3DX12_TEXTURE_COPY_LOCATION{m_envTexture.texture.Get(), subresourceIndex}, 0, 0, 0, &CD3DX12_TEXTURE_COPY_LOCATION{envTextureUnfiltered.texture.Get(), subresourceIndex}, nullptr);
+					auto CTR = CD3DX12_TEXTURE_COPY_LOCATION{ m_envTexture.texture.Get(), subresourceIndex };
+					auto CTR2 = CD3DX12_TEXTURE_COPY_LOCATION{ envTextureUnfiltered.texture.Get(), subresourceIndex };
+					m_commandList->CopyTextureRegion(&CTR, 0, 0, 0, &CTR2, nullptr);
 				}
 				m_commandList->ResourceBarrier(2, postCopyBarriers);
 
@@ -434,7 +437,8 @@ void Renderer::setup()
 					m_commandList->SetComputeRoot32BitConstants(2, 1, &spmapRoughness, 0);
 					m_commandList->Dispatch(numGroups, numGroups, 6);
 				}
-				m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_envTexture.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
+				auto RB = CD3DX12_RESOURCE_BARRIER::Transition(m_envTexture.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+				m_commandList->ResourceBarrier(1, &RB);
 
 				executeCommandList();
 				waitForGPU();
@@ -457,14 +461,16 @@ void Renderer::setup()
 				throw std::runtime_error("Failed to create compute pipeline state (irmap)");
 			}
 
-			m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_irmapTexture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			auto RB = CD3DX12_RESOURCE_BARRIER::Transition(m_irmapTexture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			m_commandList->ResourceBarrier(1, &RB);
 			m_commandList->SetDescriptorHeaps(1, computeDescriptorHeaps);
 			m_commandList->SetPipelineState(pipelineState.Get());
 			m_commandList->SetComputeRootSignature(computeRootSignature.Get());
 			m_commandList->SetComputeRootDescriptorTable(0, m_envTexture.srv.gpuHandle);
 			m_commandList->SetComputeRootDescriptorTable(1, m_irmapTexture.uav.gpuHandle);
 			m_commandList->Dispatch(m_irmapTexture.width/32, m_irmapTexture.height/32, 6);
-			m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_irmapTexture.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
+			auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(m_irmapTexture.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+			m_commandList->ResourceBarrier(1, &RB2);
 			
 			executeCommandList();
 			waitForGPU();
@@ -485,14 +491,15 @@ void Renderer::setup()
 			if(FAILED(m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)))) {
 				throw std::runtime_error("Failed to create compute pipeline state (spbrdf)");
 			}
-
-			m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_spBRDF_LUT.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			auto RB = CD3DX12_RESOURCE_BARRIER::Transition(m_spBRDF_LUT.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+			m_commandList->ResourceBarrier(1, &RB);
 			m_commandList->SetDescriptorHeaps(1, computeDescriptorHeaps);
 			m_commandList->SetPipelineState(pipelineState.Get());
 			m_commandList->SetComputeRootSignature(computeRootSignature.Get());
 			m_commandList->SetComputeRootDescriptorTable(1, m_spBRDF_LUT.uav.gpuHandle);
 			m_commandList->Dispatch(m_spBRDF_LUT.width/32, m_spBRDF_LUT.height/32, 1);
-			m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_spBRDF_LUT.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON));
+			auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(m_spBRDF_LUT.texture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON);
+			m_commandList->ResourceBarrier(1, &RB2);
 		
 			executeCommandList();
 			waitForGPU();
@@ -562,8 +569,10 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	m_commandList->Reset(commandAllocator, m_skyboxPipelineState.Get());
 	
 	// Set global state.
-	m_commandList->RSSetViewports(1, &CD3DX12_VIEWPORT{0.0f, 0.0f, (FLOAT)framebuffer.width, (FLOAT)framebuffer.height});
-	m_commandList->RSSetScissorRects(1, &CD3DX12_RECT{0, 0, (LONG)framebuffer.width, (LONG)framebuffer.height});
+	auto RB = CD3DX12_VIEWPORT{ 0.0f, 0.0f, (FLOAT)framebuffer.width, (FLOAT)framebuffer.height };
+	m_commandList->RSSetViewports(1, &RB);
+	auto RB2 = CD3DX12_RECT{ 0, 0, (LONG)framebuffer.width, (LONG)framebuffer.height };
+	m_commandList->RSSetScissorRects(1, &RB2);
 	
 	ID3D12DescriptorHeap* descriptorHeaps[] = { 
 		m_descHeapCBV_SRV_UAV.heap.Get()
@@ -572,7 +581,8 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 
 	// If not using MSAA, transition main framebuffer into render target state.
 	if(framebuffer.samples <= 1) {
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(framebuffer.colorTexture.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		auto RB3 = CD3DX12_RESOURCE_BARRIER::Transition(framebuffer.colorTexture.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		m_commandList->ResourceBarrier(1, &RB3);
 	}
 
 	// Prepare for rendering into the main framebuffer.
@@ -611,11 +621,13 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 		resolveFrameBuffer(framebuffer, resolveFramebuffer, DXGI_FORMAT_R16G16B16A16_FLOAT);
 	}
 	else {
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(framebuffer.colorTexture.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		auto RB4 = CD3DX12_RESOURCE_BARRIER::Transition(framebuffer.colorTexture.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_commandList->ResourceBarrier(1, &RB4);
 	}
 
 	// Prepare for rendering directly into a back buffer.
-	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	auto RB5 = CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	m_commandList->ResourceBarrier(1, &RB5);
 	m_commandList->OMSetRenderTargets(1, &backbuffer.rtv.cpuHandle, false, nullptr);
 
 	// Draw a full screen triangle for postprocessing/tone mapping.
@@ -626,8 +638,8 @@ void Renderer::render(GLFWwindow* window, const ViewSettings& view, const SceneS
 	
 		m_commandList->DrawInstanced(3, 1, 0, 0);
 	}
-	
-	m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	auto RB6 = CD3DX12_RESOURCE_BARRIER::Transition(backbuffer.buffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	m_commandList->ResourceBarrier(1, &RB6);
 
 	executeCommandList(false);
 	presentFrame();
@@ -654,11 +666,12 @@ MeshBuffer Renderer::createMeshBuffer(const std::shared_ptr<Mesh>& mesh) const
 	const size_t indexDataSize = mesh->faces().size() * sizeof(Mesh::Face);
 
 	// Create GPU resources & initialize view structures.
-
+	auto RB = CD3DX12_HEAP_PROPERTIES{ D3D12_HEAP_TYPE_DEFAULT };
+	auto RB2 = CD3DX12_RESOURCE_DESC::Buffer(vertexDataSize);
 	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
+		&RB,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(vertexDataSize),
+		&RB2,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&buffer.vertexBuffer))))
@@ -669,10 +682,12 @@ MeshBuffer Renderer::createMeshBuffer(const std::shared_ptr<Mesh>& mesh) const
 	buffer.vbv.SizeInBytes = static_cast<UINT>(vertexDataSize);
 	buffer.vbv.StrideInBytes = sizeof(Mesh::Vertex);
 
+	auto RB3 = CD3DX12_HEAP_PROPERTIES{ D3D12_HEAP_TYPE_DEFAULT };
+	auto RB4 = CD3DX12_RESOURCE_DESC::Buffer(indexDataSize);
 	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
+		&RB3,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(indexDataSize),
+		&RB4,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&buffer.indexBuffer))))
@@ -717,18 +732,20 @@ UploadBuffer Renderer::createUploadBuffer(UINT capacity) const
 	UploadBuffer buffer;
 	buffer.cursor   = 0;
 	buffer.capacity = capacity;
-
+	auto RB = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto RB2 = CD3DX12_RESOURCE_DESC::Buffer(capacity);
 	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&RB,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(capacity),
+		&RB2,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&buffer.buffer))))
 	{
 		throw std::runtime_error("Failed to create GPU upload buffer");
 	}
-	if(FAILED(buffer.buffer->Map(0, &CD3DX12_RANGE{0, 0}, reinterpret_cast<void**>(&buffer.cpuAddress)))) {
+	auto RB3 = CD3DX12_RANGE{ 0, 0 };
+	if(FAILED(buffer.buffer->Map(0, &RB3, reinterpret_cast<void**>(&buffer.cpuAddress)))) {
 		throw std::runtime_error("Failed to map GPU upload buffer to host address space");
 	}
 	buffer.gpuAddress = buffer.buffer->GetGPUVirtualAddress();
@@ -763,11 +780,12 @@ StagingBuffer Renderer::createStagingBuffer(const ComPtr<ID3D12Resource>& resour
 	std::vector<UINT> numRows{numSubresources};
 	std::vector<UINT64> rowBytes{numSubresources};
 	m_device->GetCopyableFootprints(&resourceDesc, firstSubresource, numSubresources, 0, stagingBuffer.layouts.data(), numRows.data(), rowBytes.data(), &numBytesTotal);
-
+	auto RB = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto RB2 = CD3DX12_RESOURCE_DESC::Buffer(numBytesTotal);
 	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		&RB,
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(numBytesTotal),
+		&RB2,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&stagingBuffer.buffer))))
@@ -779,7 +797,8 @@ StagingBuffer Renderer::createStagingBuffer(const ComPtr<ID3D12Resource>& resour
 		assert(resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE3D);
 
 		void* bufferMemory;
-		if(FAILED(stagingBuffer.buffer->Map(0, &CD3DX12_RANGE{0, 0}, &bufferMemory))) {
+		auto RB = CD3DX12_RANGE{ 0, 0 };
+		if(FAILED(stagingBuffer.buffer->Map(0, &RB, &bufferMemory))) {
 			throw std::runtime_error("Failed to map GPU staging buffer to host address space");
 		}
 
@@ -822,8 +841,9 @@ Texture Renderer::createTexture(UINT width, UINT height, UINT depth, DXGI_FORMAT
 	desc.SampleDesc.Count = 1;
 	desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
+	auto RB = CD3DX12_HEAP_PROPERTIES{ D3D12_HEAP_TYPE_DEFAULT };
 	if(FAILED(m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
+		&RB,
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
 		D3D12_RESOURCE_STATE_COMMON,
@@ -855,10 +875,11 @@ Texture Renderer::createTexture(const std::shared_ptr<Image>& image, DXGI_FORMAT
 	{
 		const CD3DX12_TEXTURE_COPY_LOCATION destCopyLocation{texture.texture.Get(), 0};
 		const CD3DX12_TEXTURE_COPY_LOCATION srcCopyLocation{textureStagingBuffer.buffer.Get(), textureStagingBuffer.layouts[0]};
-
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST, 0));
+		auto RB = CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST, 0);
+		auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON, 0);
+		m_commandList->ResourceBarrier(1, &RB);
 		m_commandList->CopyTextureRegion(&destCopyLocation, 0, 0, 0, &srcCopyLocation, nullptr);
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON, 0));
+		m_commandList->ResourceBarrier(1, &RB2);
 	}
 
 	if(texture.levels > 1 && texture.width == texture.height && Utility::isPowerOfTwo(texture.width)) {
@@ -938,10 +959,11 @@ void Renderer::generateMipmaps(const Texture& texture)
 	if(desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
 		pipelineState = m_mipmapGeneration.gammaTexturePipelineState.Get();
 		linearTexture = createTexture(texture.width, texture.height, 1, DXGI_FORMAT_R8G8B8A8_UNORM, texture.levels);
-
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(linearTexture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
+		auto RB = CD3DX12_RESOURCE_BARRIER::Transition(linearTexture.texture.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+		auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(linearTexture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+		m_commandList->ResourceBarrier(1, &RB);
 		m_commandList->CopyResource(linearTexture.texture.Get(), texture.texture.Get());
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(linearTexture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON));
+		m_commandList->ResourceBarrier(1, &RB2);
 	}
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { 
@@ -970,14 +992,16 @@ void Renderer::generateMipmaps(const Texture& texture)
 		m_commandList->Dispatch(glm::max(UINT(1), levelWidth/8), glm::max(UINT(1), levelHeight/8), desc.DepthOrArraySize);
 		m_commandList->ResourceBarrier(desc.DepthOrArraySize, postDispatchBarriers.data());
 	}
-	
+	auto RB = CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COMMON);
+	auto RB2 = CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+	auto RB3 = CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
 	if(texture.texture == linearTexture.texture) {
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COMMON));
+		m_commandList->ResourceBarrier(1, &RB);
 	}
 	else {
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+		m_commandList->ResourceBarrier(1, &RB2);
 		m_commandList->CopyResource(texture.texture.Get(), linearTexture.texture.Get());
-		m_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON));
+		m_commandList->ResourceBarrier(1, &RB3);
 	}
 
 	executeCommandList();
@@ -1060,12 +1084,14 @@ FrameBuffer Renderer::createFrameBuffer(UINT width, UINT height, UINT samples, D
 		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 		const float optimizedClearColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+		auto RB = CD3DX12_HEAP_PROPERTIES{ D3D12_HEAP_TYPE_DEFAULT };
+		auto RB2 = CD3DX12_CLEAR_VALUE{ colorFormat, optimizedClearColor };
 		if(FAILED(m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
+			&RB,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			&CD3DX12_CLEAR_VALUE{colorFormat, optimizedClearColor},
+			&RB2,
 			IID_PPV_ARGS(&fb.colorTexture))))
 		{
 			throw std::runtime_error("Failed to create FrameBuffer color texture");
@@ -1094,13 +1120,14 @@ FrameBuffer Renderer::createFrameBuffer(UINT width, UINT height, UINT samples, D
 	if(depthstencilFormat != DXGI_FORMAT_UNKNOWN) {
 		desc.Format = depthstencilFormat;
 		desc.Flags  = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
-
+		auto RB = CD3DX12_HEAP_PROPERTIES{ D3D12_HEAP_TYPE_DEFAULT };
+		auto RB2 = CD3DX12_CLEAR_VALUE{ depthstencilFormat, 1.0f, 0 };
 		if(FAILED(m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES{D3D12_HEAP_TYPE_DEFAULT},
+			&RB,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
-			&CD3DX12_CLEAR_VALUE{depthstencilFormat, 1.0f, 0},
+			&RB2,
 			IID_PPV_ARGS(&fb.depthStencilTexture))))
 		{
 			throw std::runtime_error("Failed to create FrameBuffer depth-stencil texture");
